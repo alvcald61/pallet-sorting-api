@@ -2,8 +2,11 @@ package com.tupack.palletsortingapi.model;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.proxy.HibernateProxy;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -18,6 +21,9 @@ import jakarta.persistence.PreUpdate;
 @Getter
 @Setter
 @MappedSuperclass
+@SuperBuilder
+@AllArgsConstructor
+@NoArgsConstructor
 public abstract class BaseEntity {
 
   @Id
@@ -31,7 +37,7 @@ public abstract class BaseEntity {
   private LocalDateTime updatedAt;
   private String createdBy;
   private String updatedBy;
-  private String enabled;
+  private boolean enabled;
 
   @PrePersist
   public void prePersist() {
@@ -39,17 +45,12 @@ public abstract class BaseEntity {
       createdAt = LocalDateTime.now();
     }
     updatedAt = LocalDateTime.now();
-    if (enabled == null) {
-      enabled = "true"; // Default value for enabled
-    }
+    enabled = true;
   }
 
   @PreUpdate
   public void preUpdate() {
     updatedAt = LocalDateTime.now();
-    if (enabled == null) {
-      enabled = "true"; // Ensure enabled is set to true on update if not already set
-    }
   }
 
   @Override
