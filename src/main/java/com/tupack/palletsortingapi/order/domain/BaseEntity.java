@@ -25,9 +25,9 @@ import jakarta.persistence.PreUpdate;
 public abstract class BaseEntity {
 
   @Id
-  @GeneratedValue(strategy = GenerationType.UUID)
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
   @Column(updatable = false, nullable = false)
-  private String id;
+  private Long id;
 
   @Column(name = "created_at", updatable = false)
   private LocalDateTime createdAt;

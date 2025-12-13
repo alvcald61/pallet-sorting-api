@@ -49,12 +49,17 @@ public class SecurityConfig {
   public SecurityFilterChain filterChain(HttpSecurity http, AuthenticationProvider authProvider)
           throws Exception {
     http.csrf(AbstractHttpConfigurer::disable)
-            //.cors(AbstractHttpConfigurer::disable)
+//            .cors(AbstractHttpConfigurer::disable)
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/**", "/actuator/health",
-                            "/actuator/info").permitAll()
-                    .requestMatchers(HttpMethod.GET, "/api/pallets/public").permitAll().anyRequest()
-                    .authenticated()).authenticationProvider(authProvider)
+            .authorizeHttpRequests(auth -> auth
+//                .requestMatchers(
+//                "/api/auth/**",
+//                    "/api/**",
+//                    "/api/order/**",
+//                    "/actuator/health",
+//                            "/actuator/info").permitAll()
+                    .anyRequest()
+                    .permitAll()).authenticationProvider(authProvider)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .httpBasic(Customizer.withDefaults());
     return http.build();

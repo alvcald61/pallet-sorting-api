@@ -1,0 +1,17 @@
+package com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase;
+
+import com.tupack.palletsortingapi.user.domain.Driver;
+import java.util.List;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface DriverRepository extends JpaRepository<Driver, Long> {
+  Optional<Driver> findDriverByUserId(Long userId);
+
+  List<Driver> findAllByEnabled(boolean enabled);
+
+  Driver getDriverById(Long id);
+
+  Optional<Driver> findByDni(String dni);
+}
+

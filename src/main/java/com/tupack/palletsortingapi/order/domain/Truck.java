@@ -1,5 +1,8 @@
 package com.tupack.palletsortingapi.order.domain;
 
+import com.tupack.palletsortingapi.order.domain.emuns.TruckStatus;
+import com.tupack.palletsortingapi.user.domain.Driver;
+import jakarta.persistence.OneToOne;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,5 +30,9 @@ public class Truck extends BaseEntity {
     private Double volume;
     private Double weight;
     private Double area;
+		private String truckType;
+    private Double multiplayer;
+    @OneToOne
+    private Driver driver;
 
 }

@@ -39,9 +39,9 @@ public class TruckOrder {
   @MapsId("truckId")
   private Truck truck;
 
-  @ManyToOne
-  @JoinColumn(name = "driverId", nullable = false)
-  private Driver driver;
+//  @ManyToOne
+//  @JoinColumn(name = "driverId")
+//  private Driver driver;
 
   @Column(name = "created_at", updatable = false)
   private LocalDateTime createdAt;

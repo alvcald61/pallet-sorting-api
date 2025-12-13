@@ -18,5 +18,5 @@ application:
   security:
     jwt:
       secret: "cambia-esta-clave-super-secreta-y-larga-para-produccion-32+chars"
-      access-token-expiration-minutes: 15
+      access-token-expiration-minutes: 60
       refresh-token-expiration-days: 7

@@ -1,5 +1,6 @@
 package com.tupack.palletsortingapi.order.domain;
 
+import java.math.BigDecimal;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -18,5 +19,10 @@ import jakarta.persistence.Table;
 public class Zone extends BaseEntity{
   private String name;
   private Long maxDeliveryTime;
-  private Double costPerKm;
+  private String zoneName;
+  private String district;
+  private String city;
+  private String state;
+
 }
+

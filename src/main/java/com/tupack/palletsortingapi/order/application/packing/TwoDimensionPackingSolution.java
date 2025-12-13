@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.packing.core.Bin;
 import org.packing.core.BinPacking;
@@ -37,22 +38,22 @@ public class TwoDimensionPackingSolution implements Strategy {
     List<Truck> trucks = truckRepository.findByWeightAndArea(totalWeight, area);
     List<MArea> pieces = getPieces(request);
     for (Truck truck : trucks) {
-      Dimension truckDimension = new Dimension(
-              (int) ((truck.getWidth() - RIGHT_PADDING - LEFT_PADDING) * FACTOR),
+      Dimension truckDimension =
+          new Dimension((int) ((truck.getWidth() - RIGHT_PADDING - LEFT_PADDING) * FACTOR),
               (int) ((truck.getLength() - BOTTOM_PADDING - TOP_PADDING) * FACTOR));
-//      Dimension viewPort = getViewPort(new Dimension((int) ((truck.getWidth()) * FACTOR),
-//              (int) ((truck.getLength()) * FACTOR)));
+      //      Dimension viewPort = getViewPort(new Dimension((int) ((truck.getWidth()) * FACTOR),
+      //              (int) ((truck.getLength()) * FACTOR)));
       Bin[] bins = BinPacking.BinPackingStrategy(pieces.toArray(new MArea[0]), truckDimension,
-              truckDimension);
-      //      if (bins.length > 1) {
-      //        continue;
-      //      }
+          truckDimension);
+      if (bins.length > 1) {
+        continue;
+      }
       //      bins[0].getPlacedPieces()[0].getBoundingBox2D()
-      SolutionUtils.drawbinToFile(bins, truckDimension);
-      SolutionUtils.createOutputFiles(bins);
-      return SolutionDto.builder().truckId(truck.getId())
-              .truckDistributionImageUrl(Paths.get("Bin-1.png").toFile().getAbsolutePath())
-              .truckDistributionUrl(Paths.get("Bin-1.txt").toFile().getAbsolutePath()).build();
+      var resultPng = SolutionUtils.drawbinToFile(bins, truckDimension);
+      var resultTxt = SolutionUtils.createOutputFiles(bins);
+      return SolutionDto.builder().truckId(truck.getId()).truck(truck)
+          .truckDistributionImageUrl(Paths.get(resultPng.getFirst()).toFile().getAbsolutePath())
+          .truckDistributionUrl(Paths.get(resultTxt.getFirst()).toFile().getAbsolutePath()).build();
     }
     throw new IllegalArgumentException("No suitable truck found for the given request");
   }
@@ -69,7 +70,7 @@ public class TwoDimensionPackingSolution implements Strategy {
       }
       for (int j = 0; j < palletBulkDto.getQuantity(); j++) {
         pieces.add(new MArea(new Rectangle(0, 0, (int) (palletBulkDto.getWidth() * FACTOR),
-                (int) (palletBulkDto.getLength() * FACTOR)), ++i));
+            (int) (palletBulkDto.getLength() * FACTOR)), ++i));
       }
 
     }
@@ -90,13 +91,12 @@ public class TwoDimensionPackingSolution implements Strategy {
 
   private Double getTotalArea(SolvePackingRequest request) {
     return request.getPallets().stream()
-            .mapToDouble(pallet -> pallet.getWidth() * pallet.getLength() * pallet.getQuantity())
-            .sum();
+        .mapToDouble(pallet -> pallet.getWidth() * pallet.getLength() * pallet.getQuantity()).sum();
 
   }
 
   private Double getTotalWeight(SolvePackingRequest request) {
     return request.getPallets().stream()
-            .mapToDouble(pallet -> pallet.getWeight() * pallet.getQuantity()).sum();
+        .mapToDouble(pallet -> pallet.getWeight() * pallet.getQuantity()).sum();
   }
 }

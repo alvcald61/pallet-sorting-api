@@ -1,15 +1,24 @@
 package com.tupack.palletsortingapi.order.domain.id;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 
 @Embeddable
-@Data
+@AllArgsConstructor
+@NoArgsConstructor
+@EqualsAndHashCode
+@Getter
+@Setter
 public class TruckOrderId {
   @Column(name = "truckId")
-  private String truckId;
+  private Long truckId;
 
   @Column(name = "orderId")
-  private String orderId;
+  private Long orderId;
 }

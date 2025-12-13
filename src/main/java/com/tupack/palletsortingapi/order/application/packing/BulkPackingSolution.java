@@ -15,13 +15,15 @@ public class BulkPackingSolution implements Strategy {
   @Override
   public SolutionDto execute(SolvePackingRequest request) {
     Double totalVolume = getTotalVolume(request);
-    Truck truck = truckRepository.findOneByVolume(totalVolume).orElseThrow();
-    return SolutionDto.builder().truckId(truck.getId()).build();
+    Double totalWeight = request.getPallets().stream()
+        .mapToDouble(pallet -> pallet.getWeight() * pallet.getQuantity()).sum();
+    Truck truck = truckRepository.findOneByVolume(totalVolume, totalWeight).orElseThrow();
+    return SolutionDto.builder().truckId(truck.getId()).truck(truck).build();
 
   }
 
   private Double getTotalVolume(SolvePackingRequest request) {
     return request.getPallets().stream()
-            .mapToDouble(pallet -> pallet.getVolume() * pallet.getQuantity()).sum();
+        .mapToDouble(pallet -> pallet.getVolume() * pallet.getQuantity()).sum();
   }
 }

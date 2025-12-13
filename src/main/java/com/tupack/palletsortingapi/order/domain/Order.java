@@ -1,7 +1,9 @@
 package com.tupack.palletsortingapi.order.domain;
 
+import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
 import com.tupack.palletsortingapi.user.domain.Client;
 import com.tupack.palletsortingapi.utils.PackingType;
+import jakarta.persistence.EnumType;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -10,19 +12,17 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Enumerated;
-import jakarta.persistence.ForeignKey;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "order")
+@Table(name = "transport_order")
 @Getter
 @Setter
 @NoArgsConstructor
@@ -35,7 +35,7 @@ public class Order extends BaseEntity {
   @ManyToOne
   @JoinColumn(name = "zoneId", nullable = false)
   private Zone zone;
-  @OneToMany
+  @OneToMany(cascade = CascadeType.PERSIST)
   private List<OrderPallet> orderPallets;
   private LocalDateTime pickupDate;
   private String fromAddress;
@@ -50,5 +50,9 @@ public class Order extends BaseEntity {
   private String solutionImageUrl;
   @Column(columnDefinition = "TEXT")
   private String solution;
+  @Enumerated(EnumType.STRING)
+  private OrderStatus orderStatus;
+  @OneToMany
+  private List<Bulk> bulkList;
   // grep -rnw '/' -e 'AFT.TRANSACTION'
 }

@@ -1,0 +1,35 @@
+package com.tupack.palletsortingapi.order.application.dto;
+
+import com.tupack.palletsortingapi.utils.PackingType;
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import lombok.Data;
+
+/**
+ * DTO for {@link com.tupack.palletsortingapi.order.domain.Order}
+ */
+@Data
+public class OrderDto implements Serializable {
+  String id;
+  LocalDateTime createdAt;
+  LocalDateTime updatedAt;
+  String createdBy;
+  String updatedBy;
+  boolean enabled;
+  LocalDateTime pickupDate;
+  String fromAddress;
+  String toAddress;
+  LocalDateTime projectedDeliveryDate;
+  LocalDateTime realDeliveryDate;
+  BigDecimal totalVolume;
+  BigDecimal totalWeight;
+  PackingType orderType;
+  BigDecimal amount;
+  String solutionImageUrl;
+  String solution;
+  String orderStatus;
+  List<PalletBulkDto> packages;
+
+}

@@ -19,6 +19,6 @@ public class Pallet extends BaseEntity {
   private String type;
   private Double width;
   private Double length;
-  private String status;
+  private Double height;
   private Integer amount;
 }

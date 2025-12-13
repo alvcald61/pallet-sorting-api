@@ -1,31 +1,70 @@
 package com.tupack.palletsortingapi.order.application;
 
+import com.tupack.palletsortingapi.order.application.dto.AddressDto;
+import com.tupack.palletsortingapi.order.application.dto.GenericResponse;
+import com.tupack.palletsortingapi.order.application.dto.OrderDto;
+import com.tupack.palletsortingapi.order.application.dto.OrderStatusUpdateDto;
+import com.tupack.palletsortingapi.order.application.dto.PageResponse;
 import com.tupack.palletsortingapi.order.application.dto.PalletBulkDto;
 import com.tupack.palletsortingapi.order.application.dto.SolutionDto;
 import com.tupack.palletsortingapi.order.application.dto.SolvePackingRequest;
+import com.tupack.palletsortingapi.order.application.dto.TwoDimensionSolutionResponse;
+import com.tupack.palletsortingapi.order.application.mapper.BulkMapper;
+import com.tupack.palletsortingapi.order.application.mapper.OrderMapper;
+import com.tupack.palletsortingapi.order.application.mapper.OrderPalletMapper;
+import com.tupack.palletsortingapi.order.application.mapper.OrderStatusUpdateMapper;
+import com.tupack.palletsortingapi.order.application.mapper.TruckMapper;
 import com.tupack.palletsortingapi.order.application.packing.PackingStrategyExecutor;
+import com.tupack.palletsortingapi.order.domain.Bulk;
 import com.tupack.palletsortingapi.order.domain.Order;
 import com.tupack.palletsortingapi.order.domain.OrderPallet;
+import com.tupack.palletsortingapi.order.domain.Price;
+import com.tupack.palletsortingapi.order.domain.PriceCondition;
+import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
+import com.tupack.palletsortingapi.order.domain.OrderStatusUpdate;
 import com.tupack.palletsortingapi.order.domain.Pallet;
 import com.tupack.palletsortingapi.order.domain.Truck;
 import com.tupack.palletsortingapi.order.domain.TruckOrder;
+import com.tupack.palletsortingapi.order.domain.emuns.TruckStatus;
 import com.tupack.palletsortingapi.order.domain.Zone;
+import com.tupack.palletsortingapi.order.domain.id.TruckOrderId;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.BulkRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.OrderPallerRepotisoty;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.OrderRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.OrderStatusUpdateRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.PalletRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.TruckOrderRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.TruckRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.ZoneRepository;
 import com.tupack.palletsortingapi.user.domain.Client;
 import com.tupack.palletsortingapi.user.domain.Driver;
+import com.tupack.palletsortingapi.user.domain.User;
+import com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase.ClientRepository;
+import com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase.PriceConditionRepository;
+import com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase.PriceRepository;
+import com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase.UserRepository;
 import com.tupack.palletsortingapi.utils.PackingType;
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
-import org.aspectj.weaver.ast.Or;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import jakarta.transaction.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -37,6 +76,21 @@ public class OrderService {
   private final TruckRepository truckRepository;
   private final TruckOrderRepository truckOrderRepository;
   private final PalletRepository palletRepository;
+  private final TruckMapper truckMapper;
+  private final UserRepository userRepository;
+  private final ClientRepository clientRepository;
+  private final OrderPallerRepotisoty orderPalletRepository;
+  private final Map<String, List<Zone>> zoneMap;
+  private final LocalTime START_TIME = LocalTime.of(8, 0);
+  private final LocalTime END_TIME = LocalTime.of(18, 0);
+  private final OrderMapper orderMapper;
+  private final OrderStatusUpdateRepository orderStatusUpdateRepository;
+  private final OrderStatusUpdateMapper orderStatusUpdateMapper;
+  private final BulkRepository bulkRepository;
+  private final BulkMapper bulkMapper;
+  private final OrderPalletMapper orderPalletMapper;
+  private final PriceConditionRepository priceConditionRepository;
+  private final PriceRepository priceRepository;
 
   public SolutionDto solvePacking(String packingType, SolvePackingRequest request) {
     if (packingType == null || packingType.isEmpty()) {
@@ -45,48 +99,129 @@ public class OrderService {
     return switch (PackingType.valueOf(packingType)) {
       case PackingType.BULK -> context.execute(PackingType.BULK.getName(), request);
       case PackingType.TWO_DIMENSIONAL ->
-              context.execute(PackingType.TWO_DIMENSIONAL.getName(), request);
+          context.execute(PackingType.TWO_DIMENSIONAL.getName(), request);
       case PackingType.THREE_DIMENSIONAL ->
-              context.execute(PackingType.THREE_DIMENSIONAL.getName(), request);
+          context.execute(PackingType.THREE_DIMENSIONAL.getName(), request);
     };
   }
 
-  public SolutionDto scheduleOrder(String packingType, SolvePackingRequest request) {
+  @Transactional
+  public TwoDimensionSolutionResponse scheduleOrder(String packingType,
+      SolvePackingRequest request) {
     Order order = new Order();
     SolutionDto solution = solvePacking(packingType, request);
+    Truck truck = solution.getTruck();
     order.setOrderType(PackingType.valueOf(packingType));
-    List<OrderPallet> orderPallets = request.getPallets().stream()
-            .map(orderPallet -> mapToOrderPallet(orderPallet, order)).toList();
-    order.setOrderPallets(orderPallets);
-    Client client = getLoggedInClient();
+    Client client;
+    if (request.getUserId() != null && !request.getUserId().isEmpty()) {
+      client = getUserIdClient(request.getUserId());
+    } else {
+      client = getLoggedInClient();
+    }
     order.setClient(client);
     order.setPickupDate(request.getDeliveryDate());
-    Zone zone = zoneRepository.findById(request.getZoneId()).orElseThrow();
-    order.setZone(zone);
+    Zone zone = getZoneForRequest(request);
     order.setAmount(calculateOrderAmount(solution, request, zone));
-    order.setFromAddress(request.getFromAddress());
-    order.setToAddress(request.getToAddress());
+    order.setFromAddress(getAddress(request.getFromAddress()));
+    order.setToAddress(getAddress(request.getToAddress()));
     order.setProjectedDeliveryDate(
-            request.getDeliveryDate().plusMinutes(zone.getMaxDeliveryTime()));
-    order.setTotalVolume(getTotalVolume(request));
-    Truck truck = truckRepository.findById(solution.getTruckId()).orElseThrow();
-    isDateAvailable(request.getDeliveryDate(), order.getProjectedDeliveryDate(),
-            truck);
-    orderRepository.save(order);
-    TruckOrder truckOrder = new TruckOrder();
-    truckOrder.setOrder(order);
-    truckOrder.setTruck(truck);
-    truckOrder.setDriver(getAvailableDriver(request.getDeliveryDate(), truck));
-    orderRepository.save(order);
+        request.getDeliveryDate().plusMinutes(zone.getMaxDeliveryTime()));
+    if (!isTruckAvailable(truck)) {
+      truck = findSimilarDimensionsTruck(solution, order);
+    }
+    if (packingType.equalsIgnoreCase(PackingType.TWO_DIMENSIONAL.name())
+        || packingType.equalsIgnoreCase(PackingType.THREE_DIMENSIONAL.name())) {
+      order.setSolution(solution.getTruckDistributionUrl());
+      order.setSolutionImageUrl(solution.getTruckDistributionImageUrl());
+    }
+    isDateAvailable(request.getDeliveryDate(), order.getProjectedDeliveryDate(), truck);
+    order.setOrderStatus(OrderStatus.DELIVERED);
+    order.setZone(zone);
+    Order finalOrder = orderRepository.save(order);
+
+    OrderStatusUpdate orderStatusUpdate = new OrderStatusUpdate(finalOrder, OrderStatus.DELIVERED);
+    orderStatusUpdateRepository.save(orderStatusUpdate);
+
+    if (!packingType.equals(PackingType.BULK.getName())) {
+      List<OrderPallet> orderPallets = request.getPallets().stream()
+          .map(palletBulkDto -> mapToOrderPallet(palletBulkDto, finalOrder)).toList();
+      orderPallets = orderPalletRepository.saveAll(orderPallets);
+      finalOrder.setOrderPallets(orderPallets);
+    } else {
+      List<Bulk> bulkList = request.getPallets().stream().map(
+          pallet -> new Bulk(finalOrder, pallet.getQuantity(), pallet.getVolume(),
+              pallet.getWeight())).toList();
+      bulkRepository.saveAll(bulkList);
+      finalOrder.setBulkList(bulkList);
+    }
+    TruckOrder truckOrder = saveTruckOrderRelation(finalOrder, truck);
     truckOrderRepository.save(truckOrder);
-    return solution;
+    truck.setStatus(TruckStatus.ASSIGNED);
+    truckRepository.save(truck);
+    TwoDimensionSolutionResponse response = new TwoDimensionSolutionResponse();
+    response.setImageUrl(solution.getTruckDistributionImageUrl());
+    response.setTruck(truckMapper.toDto(solution.getTruck()));
+    return response;
+  }
+
+  private Client getUserIdClient(String userId) {
+    return clientRepository.findClientByUserId(Long.valueOf(userId)).orElseThrow();
+  }
+
+  private String getAddress(AddressDto fromAddressDto) {
+    return String.format("%s, %s, %s, %s", fromAddressDto.address(), fromAddressDto.district(),
+        fromAddressDto.city(), fromAddressDto.state());
+  }
+
+  private Zone getZoneForRequest(SolvePackingRequest request) {
+    AddressDto toAddress = request.getToAddress();
+    List<Zone> stateZone = zoneMap.get(toAddress.state().toLowerCase());
+    if (stateZone == null || stateZone.isEmpty()) {
+      throw new IllegalArgumentException("No zone found for the given state: " + toAddress.state());
+    }
+    List<Zone> cityZone =
+        stateZone.stream().filter(zone -> zone.getCity().equalsIgnoreCase(toAddress.city()))
+            .toList();
+    return cityZone.stream().filter(zone -> hasDistrict(zone, toAddress)).findFirst().orElseGet(
+        () -> cityZone.stream().filter(zone -> zone.getDistrict().equalsIgnoreCase("*")).findFirst()
+            .orElseThrow(() -> new IllegalArgumentException(
+                "No zone found for the given district: " + toAddress.district())));
+  }
+
+  private boolean hasDistrict(Zone zone, AddressDto toAddress) {
+    String[] districts = zone.getDistrict().split(",");
+    for (String district : districts) {
+      if (district.trim().equalsIgnoreCase(toAddress.district().trim())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private TruckOrder saveTruckOrderRelation(Order finalOrder, Truck truck) {
+    TruckOrder truckOrder = new TruckOrder();
+    truckOrder.setOrder(finalOrder);
+    truckOrder.setTruck(truck);
+    truckOrder.setTruckOrderId(new TruckOrderId(truck.getId(), finalOrder.getId()));
+    return truckOrder;
+  }
+
+  private Truck findSimilarDimensionsTruck(SolutionDto solution, Order order) {
+    return truckRepository.findSimularDimensionsTruck(solution.getTruck().getWidth(),
+        solution.getTruck().getLength()).orElseThrow();
+  }
+
+  private boolean isTruckAvailable(Truck truck) {
+    return truck.getStatus().equals(TruckStatus.AVAILABLE);
   }
 
   private OrderPallet mapToOrderPallet(PalletBulkDto palletBulkDto, Order order) {
     OrderPallet orderPallet = new OrderPallet();
     Pallet pallet = palletRepository.findById(palletBulkDto.getPalletId()).orElseThrow();
     orderPallet.setPallet(pallet);
+    orderPallet.setOrder(order);
     orderPallet.setQuantity(palletBulkDto.getQuantity());
+    orderPallet.setWeight(BigDecimal.valueOf(palletBulkDto.getWeight()));
     return orderPallet;
   }
 
@@ -98,17 +233,105 @@ public class OrderService {
     orderRepository.existsOrderInDateRange(startDate, endDate, truck);
   }
 
-  private BigDecimal getTotalVolume(SolvePackingRequest request) {
-    return null;
-  }
-
   private BigDecimal calculateOrderAmount(SolutionDto solution, SolvePackingRequest request,
-          Zone zone) {
+      Zone zone) {
+    //    return zone.getFee().multiply(BigDecimal.valueOf(solution.getTruck().getMultiplayer()));
+    if (request.getToAddress().city().equalsIgnoreCase("lima")) {
+      Zone requestZone =
+          zoneRepository.findZoneByDistrictContaining(request.getToAddress().district()).orElseThrow();
+      PriceCondition matchCondition =
+          priceConditionRepository.findByVolumeAndWeight(request.getTotalVolume(),
+              request.getTotalWeight()).orElseThrow();
+      Price price = priceRepository.findByZoneAndPriceCondition(requestZone, matchCondition);
+      return price.getPrice();
+    }
     return null;
   }
 
   private Client getLoggedInClient() {
-    return null;
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    User user = (User) securityContext.getAuthentication().getPrincipal();
+    return clientRepository.findClientByUserId(user.getId()).orElseThrow();
   }
 
+  public List<String> getAvailableTimeSlots(String date) {
+    List<LocalTime> allSlots = generateAllTimeSlots(START_TIME, END_TIME);
+    LocalDate localDate = LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+    List<LocalDateTime> notAvailableSlots =
+        orderRepository.findNotAvailableSlots(localDate.atStartOfDay(),
+            localDate.atTime(23, 59, 59));
+    List<LocalTime> notAvailableTimes =
+        notAvailableSlots.stream().map(LocalDateTime::toLocalTime).toList();
+    if (notAvailableSlots.isEmpty()) {
+      return allSlots.stream().map(LocalTime::toString).toList();
+    } else {
+      return allSlots.stream().filter(slot -> !notAvailableTimes.contains(slot))
+          .map(LocalTime::toString).toList();
+    }
+  }
+
+  private List<LocalTime> generateAllTimeSlots(LocalTime startTime, LocalTime endTime) {
+    List<LocalTime> slots = new ArrayList<>();
+    LocalTime currentTime = startTime;
+    while (!currentTime.isAfter(endTime)) {
+      slots.add(currentTime);
+      currentTime = currentTime.plusHours(1);
+    }
+    return slots;
+  }
+
+  public GenericResponse getAllOrders(Pageable pageable) {
+    Client client = getLoggedInClient();
+    Page<Order> orders = orderRepository.getAllByClientId(client.getId(), pageable);
+    GenericResponse response = new GenericResponse();
+    response.setPageInfo(getPageInfo(orders));
+    response.setData(orders.get().map(orderMapper::toDto));
+    return response;
+  }
+
+  private PageResponse getPageInfo(Page<Order> orders) {
+    PageResponse pageInfo = new PageResponse();
+    pageInfo.setPageNumber(orders.getNumber());
+    pageInfo.setPageSize(orders.getSize());
+    pageInfo.setTotalElements(orders.getTotalElements());
+    pageInfo.setTotalPages(orders.getTotalPages());
+    return pageInfo;
+  }
+
+  public GenericResponse getOrderById(Long orderId) {
+    Order order = orderRepository.getOrderById(orderId).orElseThrow();
+    List<PalletBulkDto> palletBulkDtoList;
+    if (order.getOrderType().equals(PackingType.BULK)) {
+      List<Bulk> bulkList = bulkRepository.findAllByOrder_Id(orderId);
+      palletBulkDtoList = bulkList.stream().map(bulkMapper::toDto).toList();
+    } else {
+      List<OrderPallet> pallets = orderPalletRepository.getAllByOrder_Id(orderId);
+      palletBulkDtoList = pallets.stream().map(orderPalletMapper::toDto).toList();
+    }
+    OrderDto orderDto = orderMapper.toDto(order);
+    orderDto.setPackages(palletBulkDtoList);
+    return GenericResponse.success(orderDto);
+  }
+
+  public GenericResponse getOrderStatus(Long orderId) {
+    List<OrderStatusUpdate> orderStatusUpdate =
+        orderStatusUpdateRepository.getAllByOrder_IdOrderByCreatedAtDesc(orderId);
+    List<OrderStatusUpdateDto> dto =
+        orderStatusUpdate.stream().map(orderStatusUpdateMapper::toDto).toList();
+    return GenericResponse.success(dto);
+  }
+
+  public ResponseEntity<String> getOrderImage(Long orderId) {
+    Order order = orderRepository.getOrderById(orderId).orElseThrow();
+    Path imagePath = Path.of(order.getSolutionImageUrl());
+    try {
+      byte[] imageBytes = Files.readAllBytes(imagePath);
+      return ResponseEntity.ok().contentType(MediaType.IMAGE_PNG)
+          .body(Base64.getEncoder().encodeToString(imageBytes));
+    } catch (IOException e) {
+      throw new IllegalArgumentException("Image not found");
+    }
+  }
+
+  
 }
