@@ -67,7 +67,7 @@ public class ClientService {
       // Create Client associated with User
       Client client = Client.builder().user(savedUser).ruc(request.getRuc())
           .businessName(request.getBusinessName()).phone(request.getPhone())
-          .address(request.getAddress()).enabled(true).build();
+          .address(request.getAddress()).trust(request.isTrust()).enabled(true).build();
       Client savedClient = clientRepository.save(client);
 
       return GenericResponse.success(clientMapper.toDto(savedClient));
@@ -102,6 +102,8 @@ public class ClientService {
       client.setBusinessName(request.getBusinessName());
       client.setPhone(request.getPhone());
       client.setAddress(request.getAddress());
+      client.setTrust(request.isTrust());
+      client.setUser(user);
       Client updated = clientRepository.save(client);
 
       return GenericResponse.success(clientMapper.toDto(updated));

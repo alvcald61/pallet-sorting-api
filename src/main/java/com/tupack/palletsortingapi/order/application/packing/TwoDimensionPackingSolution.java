@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.packing.core.Bin;
 import org.packing.core.BinPacking;
@@ -35,7 +34,9 @@ public class TwoDimensionPackingSolution implements Strategy {
   public SolutionDto execute(SolvePackingRequest request) throws IOException {
     Double totalWeight = getTotalWeight(request);
     Double area = getTotalArea(request);
-    List<Truck> trucks = truckRepository.findByWeightAndArea(totalWeight, area);
+    Double maxHeight =
+        request.getPallets().stream().mapToDouble(PalletBulkDto::getHeight).max().orElse(0.0);
+    List<Truck> trucks = truckRepository.findByWeightAndAreaAndHeight(totalWeight, area, maxHeight);
     List<MArea> pieces = getPieces(request);
     for (Truck truck : trucks) {
       Dimension truckDimension =

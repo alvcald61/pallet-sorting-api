@@ -30,4 +30,5 @@ public class Client extends BaseEntity {
   private String address;
   @Enumerated(EnumType.STRING)
   private ClientType clientType;
+  private boolean trust;
 }

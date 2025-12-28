@@ -14,6 +14,9 @@ import org.mapstruct.ReportingPolicy;
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = ComponentModel.SPRING)
 public interface DriverMapper {
 
+  @Mapping(target = "email", source = "user.email")
+  @Mapping(target = "firstName", source = "user.firstName")
+  @Mapping(target = "lastName", source = "user.lastName")
   DriverDto toDto(Driver driver);
 
   Driver toEntity(CreateDriverRequest request);

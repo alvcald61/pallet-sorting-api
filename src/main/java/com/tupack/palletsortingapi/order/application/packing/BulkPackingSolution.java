@@ -1,5 +1,6 @@
 package com.tupack.palletsortingapi.order.application.packing;
 
+import com.tupack.palletsortingapi.order.application.dto.PalletBulkDto;
 import com.tupack.palletsortingapi.order.domain.Truck;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.TruckRepository;
 import com.tupack.palletsortingapi.order.application.dto.SolutionDto;
@@ -17,7 +18,9 @@ public class BulkPackingSolution implements Strategy {
     Double totalVolume = getTotalVolume(request);
     Double totalWeight = request.getPallets().stream()
         .mapToDouble(pallet -> pallet.getWeight() * pallet.getQuantity()).sum();
-    Truck truck = truckRepository.findOneByVolume(totalVolume, totalWeight).orElseThrow();
+    Double maxHeight = request.getPallets().stream()
+        .mapToDouble(PalletBulkDto::getHeight).max().orElse(0.0);
+    Truck truck = truckRepository.findOneByVolume(totalVolume, totalWeight, maxHeight).orElseThrow();
     return SolutionDto.builder().truckId(truck.getId()).truck(truck).build();
 
   }

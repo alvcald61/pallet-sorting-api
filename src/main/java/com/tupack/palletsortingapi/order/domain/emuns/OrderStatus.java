@@ -8,7 +8,8 @@ public enum OrderStatus {
   PRE_APPROVED("PRE-APROBADO"),
   APPROVED("APROVADO"),
   IN_PROGRESS("EN CAMINO"),
-  DELIVERED("ENTREGADO");
+  DELIVERED("ENTREGADO"),
+  DENIED("DENEGADO");
 
   private final String state;
 

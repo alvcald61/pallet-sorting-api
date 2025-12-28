@@ -19,4 +19,6 @@ public class TruckDto implements Serializable {
 	Double area;
   boolean enabled;
   Double multiplayer;
+  Long driverId;
+  String driverName;
 }

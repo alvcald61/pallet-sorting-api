@@ -56,6 +56,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -108,51 +109,31 @@ public class OrderService {
   @Transactional
   public TwoDimensionSolutionResponse scheduleOrder(String packingType,
       SolvePackingRequest request) {
-    Order order = new Order();
     SolutionDto solution = solvePacking(packingType, request);
     Truck truck = solution.getTruck();
-    order.setOrderType(PackingType.valueOf(packingType));
-    Client client;
-    if (request.getUserId() != null && !request.getUserId().isEmpty()) {
-      client = getUserIdClient(request.getUserId());
-    } else {
-      client = getLoggedInClient();
-    }
-    order.setClient(client);
-    order.setPickupDate(request.getDeliveryDate());
-    Zone zone = getZoneForRequest(request);
-    order.setAmount(calculateOrderAmount(solution, request, zone));
-    order.setFromAddress(getAddress(request.getFromAddress()));
-    order.setToAddress(getAddress(request.getToAddress()));
-    order.setProjectedDeliveryDate(
-        request.getDeliveryDate().plusMinutes(zone.getMaxDeliveryTime()));
+    Client client = getClient(request);
+    Order order = initializeOrder(packingType, request, client, solution);
+
     if (!isTruckAvailable(truck)) {
       truck = findSimilarDimensionsTruck(solution, order);
     }
+
     if (packingType.equalsIgnoreCase(PackingType.TWO_DIMENSIONAL.name())
         || packingType.equalsIgnoreCase(PackingType.THREE_DIMENSIONAL.name())) {
       order.setSolution(solution.getTruckDistributionUrl());
       order.setSolutionImageUrl(solution.getTruckDistributionImageUrl());
     }
+
     isDateAvailable(request.getDeliveryDate(), order.getProjectedDeliveryDate(), truck);
-    order.setOrderStatus(OrderStatus.DELIVERED);
-    order.setZone(zone);
     Order finalOrder = orderRepository.save(order);
 
     OrderStatusUpdate orderStatusUpdate = new OrderStatusUpdate(finalOrder, OrderStatus.DELIVERED);
     orderStatusUpdateRepository.save(orderStatusUpdate);
 
     if (!packingType.equals(PackingType.BULK.getName())) {
-      List<OrderPallet> orderPallets = request.getPallets().stream()
-          .map(palletBulkDto -> mapToOrderPallet(palletBulkDto, finalOrder)).toList();
-      orderPallets = orderPalletRepository.saveAll(orderPallets);
-      finalOrder.setOrderPallets(orderPallets);
+      savePallets(request, finalOrder);
     } else {
-      List<Bulk> bulkList = request.getPallets().stream().map(
-          pallet -> new Bulk(finalOrder, pallet.getQuantity(), pallet.getVolume(),
-              pallet.getWeight())).toList();
-      bulkRepository.saveAll(bulkList);
-      finalOrder.setBulkList(bulkList);
+      saveBulks(request, finalOrder);
     }
     TruckOrder truckOrder = saveTruckOrderRelation(finalOrder, truck);
     truckOrderRepository.save(truckOrder);
@@ -162,6 +143,50 @@ public class OrderService {
     response.setImageUrl(solution.getTruckDistributionImageUrl());
     response.setTruck(truckMapper.toDto(solution.getTruck()));
     return response;
+  }
+
+  private void saveBulks(SolvePackingRequest request, Order finalOrder) {
+    List<Bulk> bulkList = request.getPallets().stream().map(
+        pallet -> new Bulk(finalOrder, pallet.getQuantity(), pallet.getVolume(),
+            pallet.getWeight())).toList();
+    bulkRepository.saveAll(bulkList);
+    finalOrder.setBulkList(bulkList);
+  }
+
+  private void savePallets(SolvePackingRequest request, Order finalOrder) {
+    List<OrderPallet> orderPallets = request.getPallets().stream()
+        .map(palletBulkDto -> mapToOrderPallet(palletBulkDto, finalOrder)).toList();
+    orderPallets = orderPalletRepository.saveAll(orderPallets);
+    finalOrder.setOrderPallets(orderPallets);
+  }
+
+  private @NonNull Order initializeOrder(String packingType, SolvePackingRequest request, Client client,
+      SolutionDto solution) {
+    Order order = new Order();
+    order.setOrderType(PackingType.valueOf(packingType));
+    order.setClient(client);
+    order.setPickupDate(request.getDeliveryDate());
+    Zone zone = getZoneForRequest(request);
+    if(client.isTrust()){
+      order.setAmount(calculateOrderAmount(solution, request, zone));
+    }
+    order.setFromAddress(getAddress(request.getFromAddress()));
+    order.setToAddress(getAddress(request.getToAddress()));
+    order.setProjectedDeliveryDate(
+        request.getDeliveryDate().plusMinutes(zone.getMaxDeliveryTime()));
+    order.setZone(zone);
+    order.setOrderStatus(OrderStatus.REVIEW);
+    return order;
+  }
+
+  private Client getClient(SolvePackingRequest request) {
+    Client client;
+    if (request.getUserId() != null && !request.getUserId().isEmpty()) {
+      client = getUserIdClient(request.getUserId());
+    } else {
+      client = getLoggedInClient();
+    }
+    return client;
   }
 
   private Client getUserIdClient(String userId) {
@@ -208,7 +233,7 @@ public class OrderService {
 
   private Truck findSimilarDimensionsTruck(SolutionDto solution, Order order) {
     return truckRepository.findSimularDimensionsTruck(solution.getTruck().getWidth(),
-        solution.getTruck().getLength()).orElseThrow();
+        solution.getTruck().getLength()).orElseThrow(()->new IllegalArgumentException("No truck available"));
   }
 
   private boolean isTruckAvailable(Truck truck) {
@@ -217,7 +242,13 @@ public class OrderService {
 
   private OrderPallet mapToOrderPallet(PalletBulkDto palletBulkDto, Order order) {
     OrderPallet orderPallet = new OrderPallet();
-    Pallet pallet = palletRepository.findById(palletBulkDto.getPalletId()).orElseThrow();
+    Pallet pallet = palletRepository.findById(palletBulkDto.getPalletId()).orElseGet(()->{
+      Pallet newPallet = new Pallet();
+      newPallet.setWidth(palletBulkDto.getWidth());
+      newPallet.setLength(palletBulkDto.getLength());
+      newPallet.setHeight(palletBulkDto.getHeight());
+      return palletRepository.save(newPallet);
+    });
     orderPallet.setPallet(pallet);
     orderPallet.setOrder(order);
     orderPallet.setQuantity(palletBulkDto.getQuantity());
@@ -238,7 +269,8 @@ public class OrderService {
     //    return zone.getFee().multiply(BigDecimal.valueOf(solution.getTruck().getMultiplayer()));
     if (request.getToAddress().city().equalsIgnoreCase("lima")) {
       Zone requestZone =
-          zoneRepository.findZoneByDistrictContaining(request.getToAddress().district()).orElseThrow();
+          zoneRepository.findZoneByDistrictContaining(request.getToAddress().district())
+              .orElseThrow();
       PriceCondition matchCondition =
           priceConditionRepository.findByVolumeAndWeight(request.getTotalVolume(),
               request.getTotalWeight()).orElseThrow();
@@ -333,5 +365,16 @@ public class OrderService {
     }
   }
 
-  
+  public GenericResponse updateOrderStatus(Long orderId, String status) {
+    OrderStatus statusEnum = OrderStatus.valueOf(status);
+    Order order = orderRepository.getOrderById(orderId).orElseThrow();
+    if (order.getOrderStatus().equals(OrderStatus.DELIVERED) || order.getOrderStatus()
+        .equals(OrderStatus.DENIED)) {
+      throw new IllegalArgumentException("Order status cannot be updated");
+    }
+    order.setOrderStatus(statusEnum);
+    orderRepository.save(order);
+    return GenericResponse.success("Order status updated successfully");
+  }
+
 }

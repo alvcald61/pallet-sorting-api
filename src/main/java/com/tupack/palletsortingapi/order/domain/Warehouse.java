@@ -22,6 +22,9 @@ public class Warehouse {
   private Long warehouseId;
   private String name;
   private String address; // address, district, city, state
+  private String district;
+  private String city;
+  private String state;
   private String phone;
 
 }

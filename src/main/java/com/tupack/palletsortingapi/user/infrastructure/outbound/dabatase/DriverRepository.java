@@ -10,7 +10,7 @@ public interface DriverRepository extends JpaRepository<Driver, Long> {
 
   List<Driver> findAllByEnabled(boolean enabled);
 
-  Driver getDriverById(Long id);
+  Driver getDriverByDriverId(Long id);
 
   Optional<Driver> findByDni(String dni);
 }

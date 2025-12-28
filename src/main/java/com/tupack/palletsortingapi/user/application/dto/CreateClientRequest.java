@@ -23,6 +23,7 @@ public class CreateClientRequest implements Serializable {
   private String businessName;
   private String phone;
   private String address;
+  private boolean trust;
   private List<Long> roles;
 }
 
