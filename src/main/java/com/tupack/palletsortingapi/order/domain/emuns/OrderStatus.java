@@ -4,9 +4,9 @@ import lombok.Getter;
 
 @Getter
 public enum OrderStatus {
-  REVIEW("EN REVISIÓN"),
+  REVIEW( "EN REVISIÓN"),
   PRE_APPROVED("PRE-APROBADO"),
-  APPROVED("APROVADO"),
+  APPROVED("APROBADO"),
   IN_PROGRESS("EN CAMINO"),
   DELIVERED("ENTREGADO"),
   DENIED("DENEGADO");

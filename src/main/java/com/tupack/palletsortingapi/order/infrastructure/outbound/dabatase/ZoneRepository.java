@@ -13,4 +13,6 @@ public interface ZoneRepository extends JpaRepository<Zone, Long> {
 
   @Query("select z from Zone z where z.district like concat('%', ?1, '%') and z.enabled = true")
   Optional<Zone> findZoneByDistrictContaining(String district);
+
+  Optional<Zone> findZoneByDistrictContainingIgnoreCase(String district);
 }

@@ -17,4 +17,5 @@ public class Role extends BaseEntity {
     // Nombres como: ROLE_USER, ROLE_ADMIN
     @Column(nullable = false, length = 50)
     private String name;
+    private String permissions;
 }

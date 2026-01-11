@@ -32,7 +32,7 @@ public class TwoDimensionPackingSolution implements Strategy {
 
   @Override
   public SolutionDto execute(SolvePackingRequest request) throws IOException {
-    Double totalWeight = getTotalWeight(request);
+    Double totalWeight = request.getTotalWeight();
     Double area = getTotalArea(request);
     Double maxHeight =
         request.getPallets().stream().mapToDouble(PalletBulkDto::getHeight).max().orElse(0.0);

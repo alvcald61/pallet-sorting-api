@@ -1,5 +1,7 @@
 package com.tupack.palletsortingapi.order.application.dto;
 
+import com.tupack.palletsortingapi.user.application.dto.DriverDto;
+import com.tupack.palletsortingapi.user.domain.Driver;
 import com.tupack.palletsortingapi.utils.PackingType;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -31,5 +33,9 @@ public class OrderDto implements Serializable {
   String solution;
   String orderStatus;
   List<PalletBulkDto> packages;
+  TruckDto truck;
+  DriverDto driver;
+  private String gpsLink;
+  private String toAddressLink;
 
 }

@@ -6,6 +6,7 @@ import com.tupack.palletsortingapi.order.application.dto.SolutionDto;
 import com.tupack.palletsortingapi.order.application.dto.SolvePackingRequest;
 import com.tupack.palletsortingapi.order.application.dto.TwoDimensionSolutionResponse;
 import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
+import java.math.BigDecimal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -65,6 +66,13 @@ public class OrderController {
       @PathVariable String status) {
     GenericResponse updatedSolution = orderService.updateOrderStatus(orderId, status);
     return ResponseEntity.ok(updatedSolution);
+  }
+
+  @PutMapping("/{orderId}/continue")
+  public ResponseEntity<GenericResponse> processOrderContinuation(@PathVariable Long orderId,
+      @RequestParam(required = false) BigDecimal amount,
+      @RequestParam(required = false) String gpsLink, @RequestParam boolean denied) {
+    return ResponseEntity.ok(orderService.continueOrder(orderId, amount, gpsLink, denied));
   }
 
 }

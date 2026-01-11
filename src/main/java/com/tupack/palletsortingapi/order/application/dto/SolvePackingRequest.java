@@ -18,9 +18,26 @@ public class SolvePackingRequest {
   private String city;
   private String street;
   private String zoneId;
-//  private String fromAddress;
-//  private String toAddress;
+  //  private String fromAddress;
+  //  private String toAddress;
   private AddressDto fromAddress;
   private AddressDto toAddress;
   private String userId;
+
+  public Double getTotalWeight() {
+    if (totalWeight == null) {
+      totalWeight =
+          pallets.stream().mapToDouble(data -> data.getWeight() * data.getQuantity()).sum();
+    }
+    return totalWeight;
+  }
+
+  public Double getTotalVolume() {
+    if (totalVolume == null) {
+      totalVolume = pallets.stream().mapToDouble(
+              (data -> data.getHeight() * data.getWeight() * data.getLength() * data.getQuantity()))
+          .sum();
+    }
+    return totalVolume;
+  }
 }

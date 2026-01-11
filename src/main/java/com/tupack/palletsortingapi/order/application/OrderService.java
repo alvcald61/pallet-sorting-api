@@ -36,12 +36,13 @@ import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.Pallet
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.TruckOrderRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.TruckRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.ZoneRepository;
+import com.tupack.palletsortingapi.user.application.mapper.DriverMapper;
 import com.tupack.palletsortingapi.user.domain.Client;
 import com.tupack.palletsortingapi.user.domain.Driver;
 import com.tupack.palletsortingapi.user.domain.User;
 import com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase.ClientRepository;
-import com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase.PriceConditionRepository;
-import com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase.PriceRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.PriceConditionRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.PriceRepository;
 import com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase.UserRepository;
 import com.tupack.palletsortingapi.utils.PackingType;
 import java.io.IOException;
@@ -92,6 +93,7 @@ public class OrderService {
   private final OrderPalletMapper orderPalletMapper;
   private final PriceConditionRepository priceConditionRepository;
   private final PriceRepository priceRepository;
+  private final DriverMapper driverMapper;
 
   public SolutionDto solvePacking(String packingType, SolvePackingRequest request) {
     if (packingType == null || packingType.isEmpty()) {
@@ -135,8 +137,7 @@ public class OrderService {
     } else {
       saveBulks(request, finalOrder);
     }
-    TruckOrder truckOrder = saveTruckOrderRelation(finalOrder, truck);
-    truckOrderRepository.save(truckOrder);
+    saveTruckOrderRelation(finalOrder, truck);
     truck.setStatus(TruckStatus.ASSIGNED);
     truckRepository.save(truck);
     TwoDimensionSolutionResponse response = new TwoDimensionSolutionResponse();
@@ -160,14 +161,14 @@ public class OrderService {
     finalOrder.setOrderPallets(orderPallets);
   }
 
-  private @NonNull Order initializeOrder(String packingType, SolvePackingRequest request, Client client,
-      SolutionDto solution) {
+  private @NonNull Order initializeOrder(String packingType, SolvePackingRequest request,
+      Client client, SolutionDto solution) {
     Order order = new Order();
     order.setOrderType(PackingType.valueOf(packingType));
     order.setClient(client);
     order.setPickupDate(request.getDeliveryDate());
     Zone zone = getZoneForRequest(request);
-    if(client.isTrust()){
+    if (client.isTrust()) {
       order.setAmount(calculateOrderAmount(solution, request, zone));
     }
     order.setFromAddress(getAddress(request.getFromAddress()));
@@ -176,6 +177,9 @@ public class OrderService {
         request.getDeliveryDate().plusMinutes(zone.getMaxDeliveryTime()));
     order.setZone(zone);
     order.setOrderStatus(OrderStatus.REVIEW);
+    order.setTotalVolume(BigDecimal.valueOf(request.getTotalVolume()));
+    order.setTotalWeight(BigDecimal.valueOf(request.getTotalWeight()));
+
     return order;
   }
 
@@ -223,17 +227,19 @@ public class OrderService {
     return false;
   }
 
-  private TruckOrder saveTruckOrderRelation(Order finalOrder, Truck truck) {
+  private void saveTruckOrderRelation(Order finalOrder, Truck truck) {
     TruckOrder truckOrder = new TruckOrder();
     truckOrder.setOrder(finalOrder);
     truckOrder.setTruck(truck);
     truckOrder.setTruckOrderId(new TruckOrderId(truck.getId(), finalOrder.getId()));
-    return truckOrder;
+    truckOrder = truckOrderRepository.save(truckOrder);
+    finalOrder.setTruckOrder(truckOrder);
   }
 
   private Truck findSimilarDimensionsTruck(SolutionDto solution, Order order) {
     return truckRepository.findSimularDimensionsTruck(solution.getTruck().getWidth(),
-        solution.getTruck().getLength()).orElseThrow(()->new IllegalArgumentException("No truck available"));
+            solution.getTruck().getLength())
+        .orElseThrow(() -> new IllegalArgumentException("No truck available"));
   }
 
   private boolean isTruckAvailable(Truck truck) {
@@ -242,7 +248,9 @@ public class OrderService {
 
   private OrderPallet mapToOrderPallet(PalletBulkDto palletBulkDto, Order order) {
     OrderPallet orderPallet = new OrderPallet();
-    Pallet pallet = palletRepository.findById(palletBulkDto.getPalletId()).orElseGet(()->{
+
+    Pallet pallet = palletRepository.findByWidthAndLengthAndHeight(palletBulkDto.getWidth(),
+        palletBulkDto.getLength(), palletBulkDto.getHeight()).orElseGet(() -> {
       Pallet newPallet = new Pallet();
       newPallet.setWidth(palletBulkDto.getWidth());
       newPallet.setLength(palletBulkDto.getLength());
@@ -269,7 +277,7 @@ public class OrderService {
     //    return zone.getFee().multiply(BigDecimal.valueOf(solution.getTruck().getMultiplayer()));
     if (request.getToAddress().city().equalsIgnoreCase("lima")) {
       Zone requestZone =
-          zoneRepository.findZoneByDistrictContaining(request.getToAddress().district())
+          zoneRepository.findZoneByDistrictContainingIgnoreCase(request.getToAddress().district())
               .orElseThrow();
       PriceCondition matchCondition =
           priceConditionRepository.findByVolumeAndWeight(request.getTotalVolume(),
@@ -314,7 +322,13 @@ public class OrderService {
 
   public GenericResponse getAllOrders(Pageable pageable) {
     Client client = getLoggedInClient();
-    Page<Order> orders = orderRepository.getAllByClientId(client.getId(), pageable);
+    Page<Order> orders;
+    if (client.getUser().getRoles().stream().anyMatch(role -> role.getName().equals("ADMIN"))) {
+      orders = orderRepository.findAll(pageable);
+    } else {
+      orders = orderRepository.getAllByClientId(client.getId(), pageable);
+
+    }
     GenericResponse response = new GenericResponse();
     response.setPageInfo(getPageInfo(orders));
     response.setData(orders.get().map(orderMapper::toDto));
@@ -341,8 +355,21 @@ public class OrderService {
       palletBulkDtoList = pallets.stream().map(orderPalletMapper::toDto).toList();
     }
     OrderDto orderDto = orderMapper.toDto(order);
+    loadTruckAndDriver(orderDto, order);
     orderDto.setPackages(palletBulkDtoList);
     return GenericResponse.success(orderDto);
+  }
+
+  private void loadTruckAndDriver(OrderDto orderDto, Order order) {
+    TruckOrder truckOrder = order.getTruckOrder();
+    if (truckOrder != null) {
+      Truck truck = truckOrder.getTruck();
+      orderDto.setTruck(truckMapper.toDto(truck));
+      Driver driver = truck.getDriver();
+      if (driver != null) {
+        orderDto.setDriver(driverMapper.toDto(driver));
+      }
+    }
   }
 
   public GenericResponse getOrderStatus(Long orderId) {
@@ -377,4 +404,32 @@ public class OrderService {
     return GenericResponse.success("Order status updated successfully");
   }
 
+  public GenericResponse continueOrder(Long orderId, BigDecimal amount, String gpsLink,
+      boolean denied) {
+    Order order = orderRepository.getOrderById(orderId).orElseThrow();
+    switch (order.getOrderStatus()) {
+      case REVIEW, PRE_APPROVED:
+        updateInitialStatus(amount, order);
+        break;
+      case APPROVED:
+          order.setGpsLink(gpsLink);
+          break;
+      default:
+        throw new IllegalArgumentException("Order cannot be continued");
+    }
+    if (denied) {
+      order.setOrderStatus(OrderStatus.DENIED);
+    }
+    orderRepository.save(order);
+    return GenericResponse.success("Order status updated successfully");
+  }
+
+  private static void updateInitialStatus(BigDecimal amount, Order order) {
+    if (amount != null) {
+      order.setAmount(amount);
+      order.setOrderStatus(OrderStatus.PRE_APPROVED);
+      return;
+    }
+    order.setOrderStatus(OrderStatus.APPROVED);
+  }
 }

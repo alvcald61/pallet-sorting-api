@@ -8,8 +8,8 @@ import com.tupack.palletsortingapi.order.domain.Price;
 import com.tupack.palletsortingapi.order.domain.PriceCondition;
 import com.tupack.palletsortingapi.order.domain.Zone;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.ZoneRepository;
-import com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase.PriceConditionRepository;
-import com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase.PriceRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.PriceConditionRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.PriceRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 

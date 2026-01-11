@@ -8,6 +8,14 @@ import com.tupack.palletsortingapi.user.application.AuthService;
 import com.tupack.palletsortingapi.user.application.dto.AuthResponse;
 import com.tupack.palletsortingapi.user.application.dto.LoginRequest;
 import com.tupack.palletsortingapi.order.application.dto.RegisterRequest;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
+import java.security.Key;
+import java.util.Date;
+import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -66,6 +74,28 @@ public class AuthServiceImpl implements AuthService {
             .tokenType("Bearer").email(user.getEmail()).firstName(user.getFirstName())
             .lastName(user.getLastName())
             .roles(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet())).build();
+  }
+
+  /**
+   * Validates the JWT token
+   * @param token the JWT token to validate
+   * @return true if the token is valid, false otherwise
+   */
+  public boolean validateToken(String token) {
+    try {
+      Jwts.parserBuilder()
+          .setSigningKey(jwtService.getSigningKey())
+          .build()
+          .parseClaimsJws(token);
+      return !jwtService.isTokenExpired(token);
+    } catch (JwtException | IllegalArgumentException e) {
+      return false;
+    }
+  }
+
+  @Override
+  public String extractUsername(String jwtToken) {
+    return jwtService.extractUsername(jwtToken);
   }
 
   private AuthResponse buildTokensFor(User user) {

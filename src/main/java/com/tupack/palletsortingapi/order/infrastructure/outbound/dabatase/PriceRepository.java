@@ -1,4 +1,4 @@
-package com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase;
+package com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase;
 
 import com.tupack.palletsortingapi.order.domain.Price;
 import com.tupack.palletsortingapi.order.domain.PriceCondition;

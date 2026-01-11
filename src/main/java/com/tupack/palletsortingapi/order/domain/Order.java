@@ -4,6 +4,7 @@ import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
 import com.tupack.palletsortingapi.user.domain.Client;
 import com.tupack.palletsortingapi.utils.PackingType;
 import jakarta.persistence.EnumType;
+import jakarta.persistence.OneToOne;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -54,5 +55,19 @@ public class Order extends BaseEntity {
   private OrderStatus orderStatus;
   @OneToMany
   private List<Bulk> bulkList;
+
+  @OneToOne(mappedBy = "order", orphanRemoval = true)
+  private TruckOrder truckOrder;
+
+  private String gpsLink;
+  private String locationLink;
+
+  @ManyToOne
+  @JoinColumn(name = "warehouseId", nullable = true)
+  private Warehouse warehouse;
+
+  //  @OneToOne
+//  private TruckOrder truckOrder;
+
   // grep -rnw '/' -e 'AFT.TRANSACTION'
 }
