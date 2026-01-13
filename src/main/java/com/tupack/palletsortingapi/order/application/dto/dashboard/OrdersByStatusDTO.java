@@ -1,4 +1,4 @@
-package com.tupack.palletsortingapi.order.infrastructure.outbound.dto;
+package com.tupack.palletsortingapi.order.application.dto.dashboard;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -9,10 +9,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class OrdersByDriverDTO {
-    private String id;
-    private String driverName;
-    private String name;
+public class OrdersByStatusDTO {
+    private String status;
+    private String orderStatus;
     private Long count;
+    private Long total;
 }
 

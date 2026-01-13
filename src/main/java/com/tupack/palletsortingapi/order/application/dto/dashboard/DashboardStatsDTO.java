@@ -1,4 +1,4 @@
-package com.tupack.palletsortingapi.order.infrastructure.outbound.dto;
+package com.tupack.palletsortingapi.order.application.dto.dashboard;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
