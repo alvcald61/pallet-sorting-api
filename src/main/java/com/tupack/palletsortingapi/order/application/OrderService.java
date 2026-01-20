@@ -30,6 +30,7 @@ import com.tupack.palletsortingapi.order.domain.Truck;
 import com.tupack.palletsortingapi.order.domain.TruckOrder;
 import com.tupack.palletsortingapi.order.domain.emuns.TruckStatus;
 import com.tupack.palletsortingapi.order.domain.Zone;
+import com.tupack.palletsortingapi.order.domain.id.OrderDocumentId;
 import com.tupack.palletsortingapi.order.domain.id.TruckOrderId;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.BulkRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.OrderDocumentRepository;
@@ -134,9 +135,8 @@ public class OrderService {
     }
 
     isDateAvailable(request.getDeliveryDate(), order.getProjectedDeliveryDate(), truck);
+    order.setDocument(createDocumentOrder(order));
     Order finalOrder = orderRepository.save(order);
-
-    finalOrder.setDocument(createDocumentOrder(finalOrder));
 
     OrderStatusUpdate orderStatusUpdate = new OrderStatusUpdate(finalOrder, OrderStatus.DELIVERED);
     orderStatusUpdateRepository.save(orderStatusUpdate);
@@ -158,9 +158,9 @@ public class OrderService {
   private List<OrderDocument> createDocumentOrder(Order finalOrder) {
     return finalOrder.getWarehouse().getDocuments().stream().map(warehouseDocument -> {
       //crear documento por cada documento del almacen
-      var orderDocument =
-        new OrderDocument(null, warehouseDocument, finalOrder, null);
-      return orderDocumentRepository.save(orderDocument);
+      return new OrderDocument(
+        new OrderDocumentId(finalOrder.getId(), warehouseDocument.getDocumentId()),
+        warehouseDocument, finalOrder, null);
     }).toList();
   }
 
@@ -192,7 +192,7 @@ public class OrderService {
     order.setFromAddress(getAddress(request.getFromAddress()));
     order.setToAddress(getAddress(request.getToAddress()));
     Warehouse warehouse =
-      warehouseRepository.findById(request.getFromAddress().warehouseId()).orElseThrow()  ;
+      warehouseRepository.findById(request.getFromAddress().warehouseId()).orElseThrow();
     order.setWarehouse(warehouse);
     order.setProjectedDeliveryDate(
       request.getDeliveryDate().plusMinutes(zone.getMaxDeliveryTime()));
@@ -384,7 +384,8 @@ public class OrderService {
   private List<DocumentDto> loadDocuments(Order order) {
     return order.getDocument().stream().map(od -> {
       var document = od.getDocument();
-      return new DocumentDto(document.getDocumentName(), od.getLink(), document.getRequired());
+      return new DocumentDto(document.getDocumentId(), document.getDocumentName(), od.getLink(),
+        document.getRequired());
     }).toList();
   }
 

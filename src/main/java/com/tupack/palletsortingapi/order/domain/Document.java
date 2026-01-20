@@ -1,12 +1,15 @@
 package com.tupack.palletsortingapi.order.domain;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import lombok.AllArgsConstructor;
@@ -31,6 +34,9 @@ public class Document {
 
   @ManyToMany(mappedBy = "documents")
   private Set<Warehouse> warehouses = new LinkedHashSet<>();
+
+  @OneToMany(mappedBy = "document", cascade = CascadeType.ALL, orphanRemoval = true)
+  private List<OrderDocument> document;
 
   @Override
   public final boolean equals(Object o) {
