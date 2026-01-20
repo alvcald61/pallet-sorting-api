@@ -75,4 +75,16 @@ public class OrderController {
     return ResponseEntity.ok(orderService.continueOrder(orderId, amount, gpsLink, denied));
   }
 
+  @PatchMapping
+  public ResponseEntity<GenericResponse> updateOrder(@RequestBody OrderDto orderDto) {
+//    GenericResponse updatedOrder = orderService.updateOrder(orderDto);
+//    return ResponseEntity.ok(updatedOrder);{
+    return null;
+  }
+
+  @PostMapping("/{orderId}/document")
+  public  ResponseEntity<GenericResponse> uploadDocument(){
+    return null;
+  }
+
 }

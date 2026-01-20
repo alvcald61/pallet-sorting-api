@@ -4,7 +4,15 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -27,5 +35,13 @@ public class Warehouse {
   private String state;
   private String phone;
   private String locationLink;
+
+  @ManyToMany
+  @JoinTable(name = "Warehouse_documents", joinColumns = @JoinColumn(name = "warehouseId"), inverseJoinColumns = @JoinColumn(name = "documentId"))
+  private Set<Document> documents = new LinkedHashSet<>();
+
+  public Warehouse(Long warehouseId) {
+    this.warehouseId = warehouseId;
+  }
 
 }

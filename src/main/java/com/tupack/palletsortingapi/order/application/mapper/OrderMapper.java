@@ -18,6 +18,8 @@ public interface OrderMapper {
   Order toEntity(OrderDto orderDto);
 
   @Mapping(source = "orderStatus", target = "orderStatus")
+  @Mapping(source = "addressLink", target = "toAddressLink")
+  @Mapping(source = "warehouse.locationLink", target = "fromAddressLink")
   @EnumMapping(nameTransformationStrategy = MappingConstants.CASE_TRANSFORMATION, configuration = "lower")
   OrderDto toDto(Order order);
 

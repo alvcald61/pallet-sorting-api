@@ -60,11 +60,16 @@ public class Order extends BaseEntity {
   private TruckOrder truckOrder;
 
   private String gpsLink;
-  private String locationLink;
+  private String addressLink;
 
   @ManyToOne
   @JoinColumn(name = "warehouseId", nullable = true)
   private Warehouse warehouse;
+
+  private boolean isDocumentPending = true;
+
+  @OneToMany
+  private List<OrderDocument> document;
 
   //  @OneToOne
 //  private TruckOrder truckOrder;

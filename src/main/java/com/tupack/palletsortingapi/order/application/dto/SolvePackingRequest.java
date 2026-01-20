@@ -35,7 +35,8 @@ public class SolvePackingRequest {
   public Double getTotalVolume() {
     if (totalVolume == null) {
       totalVolume = pallets.stream().mapToDouble(
-              (data -> data.getHeight() * data.getWeight() * data.getLength() * data.getQuantity()))
+              (data -> data.getVolume() != null ? data.getVolume() :
+                data.getHeight() * data.getWidth() * data.getLength() * data.getQuantity()))
           .sum();
     }
     return totalVolume;

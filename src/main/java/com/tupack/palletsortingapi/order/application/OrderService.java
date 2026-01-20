@@ -1,6 +1,7 @@
 package com.tupack.palletsortingapi.order.application;
 
 import com.tupack.palletsortingapi.order.application.dto.AddressDto;
+import com.tupack.palletsortingapi.order.application.dto.DocumentDto;
 import com.tupack.palletsortingapi.order.application.dto.GenericResponse;
 import com.tupack.palletsortingapi.order.application.dto.OrderDto;
 import com.tupack.palletsortingapi.order.application.dto.OrderStatusUpdateDto;
@@ -17,9 +18,11 @@ import com.tupack.palletsortingapi.order.application.mapper.TruckMapper;
 import com.tupack.palletsortingapi.order.application.packing.PackingStrategyExecutor;
 import com.tupack.palletsortingapi.order.domain.Bulk;
 import com.tupack.palletsortingapi.order.domain.Order;
+import com.tupack.palletsortingapi.order.domain.OrderDocument;
 import com.tupack.palletsortingapi.order.domain.OrderPallet;
 import com.tupack.palletsortingapi.order.domain.Price;
 import com.tupack.palletsortingapi.order.domain.PriceCondition;
+import com.tupack.palletsortingapi.order.domain.Warehouse;
 import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
 import com.tupack.palletsortingapi.order.domain.OrderStatusUpdate;
 import com.tupack.palletsortingapi.order.domain.Pallet;
@@ -29,12 +32,14 @@ import com.tupack.palletsortingapi.order.domain.emuns.TruckStatus;
 import com.tupack.palletsortingapi.order.domain.Zone;
 import com.tupack.palletsortingapi.order.domain.id.TruckOrderId;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.BulkRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.OrderDocumentRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.OrderPallerRepotisoty;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.OrderRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.OrderStatusUpdateRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.PalletRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.TruckOrderRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.TruckRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.WarehouseRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.ZoneRepository;
 import com.tupack.palletsortingapi.user.application.mapper.DriverMapper;
 import com.tupack.palletsortingapi.user.domain.Client;
@@ -94,6 +99,8 @@ public class OrderService {
   private final PriceConditionRepository priceConditionRepository;
   private final PriceRepository priceRepository;
   private final DriverMapper driverMapper;
+  private final OrderDocumentRepository orderDocumentRepository;
+  private final WarehouseRepository warehouseRepository;
 
   public SolutionDto solvePacking(String packingType, SolvePackingRequest request) {
     if (packingType == null || packingType.isEmpty()) {
@@ -102,15 +109,15 @@ public class OrderService {
     return switch (PackingType.valueOf(packingType)) {
       case PackingType.BULK -> context.execute(PackingType.BULK.getName(), request);
       case PackingType.TWO_DIMENSIONAL ->
-          context.execute(PackingType.TWO_DIMENSIONAL.getName(), request);
+        context.execute(PackingType.TWO_DIMENSIONAL.getName(), request);
       case PackingType.THREE_DIMENSIONAL ->
-          context.execute(PackingType.THREE_DIMENSIONAL.getName(), request);
+        context.execute(PackingType.THREE_DIMENSIONAL.getName(), request);
     };
   }
 
   @Transactional
   public TwoDimensionSolutionResponse scheduleOrder(String packingType,
-      SolvePackingRequest request) {
+    SolvePackingRequest request) {
     SolutionDto solution = solvePacking(packingType, request);
     Truck truck = solution.getTruck();
     Client client = getClient(request);
@@ -121,13 +128,15 @@ public class OrderService {
     }
 
     if (packingType.equalsIgnoreCase(PackingType.TWO_DIMENSIONAL.name())
-        || packingType.equalsIgnoreCase(PackingType.THREE_DIMENSIONAL.name())) {
+      || packingType.equalsIgnoreCase(PackingType.THREE_DIMENSIONAL.name())) {
       order.setSolution(solution.getTruckDistributionUrl());
       order.setSolutionImageUrl(solution.getTruckDistributionImageUrl());
     }
 
     isDateAvailable(request.getDeliveryDate(), order.getProjectedDeliveryDate(), truck);
     Order finalOrder = orderRepository.save(order);
+
+    finalOrder.setDocument(createDocumentOrder(finalOrder));
 
     OrderStatusUpdate orderStatusUpdate = new OrderStatusUpdate(finalOrder, OrderStatus.DELIVERED);
     orderStatusUpdateRepository.save(orderStatusUpdate);
@@ -146,23 +155,32 @@ public class OrderService {
     return response;
   }
 
+  private List<OrderDocument> createDocumentOrder(Order finalOrder) {
+    return finalOrder.getWarehouse().getDocuments().stream().map(warehouseDocument -> {
+      //crear documento por cada documento del almacen
+      var orderDocument =
+        new OrderDocument(null, warehouseDocument, finalOrder, null);
+      return orderDocumentRepository.save(orderDocument);
+    }).toList();
+  }
+
   private void saveBulks(SolvePackingRequest request, Order finalOrder) {
     List<Bulk> bulkList = request.getPallets().stream().map(
-        pallet -> new Bulk(finalOrder, pallet.getQuantity(), pallet.getVolume(),
-            pallet.getWeight())).toList();
+        pallet -> new Bulk(finalOrder, pallet.getQuantity(), pallet.getVolume(), pallet.getWeight()))
+      .toList();
     bulkRepository.saveAll(bulkList);
     finalOrder.setBulkList(bulkList);
   }
 
   private void savePallets(SolvePackingRequest request, Order finalOrder) {
     List<OrderPallet> orderPallets = request.getPallets().stream()
-        .map(palletBulkDto -> mapToOrderPallet(palletBulkDto, finalOrder)).toList();
+      .map(palletBulkDto -> mapToOrderPallet(palletBulkDto, finalOrder)).toList();
     orderPallets = orderPalletRepository.saveAll(orderPallets);
     finalOrder.setOrderPallets(orderPallets);
   }
 
   private @NonNull Order initializeOrder(String packingType, SolvePackingRequest request,
-      Client client, SolutionDto solution) {
+    Client client, SolutionDto solution) {
     Order order = new Order();
     order.setOrderType(PackingType.valueOf(packingType));
     order.setClient(client);
@@ -173,8 +191,11 @@ public class OrderService {
     }
     order.setFromAddress(getAddress(request.getFromAddress()));
     order.setToAddress(getAddress(request.getToAddress()));
+    Warehouse warehouse =
+      warehouseRepository.findById(request.getFromAddress().warehouseId()).orElseThrow()  ;
+    order.setWarehouse(warehouse);
     order.setProjectedDeliveryDate(
-        request.getDeliveryDate().plusMinutes(zone.getMaxDeliveryTime()));
+      request.getDeliveryDate().plusMinutes(zone.getMaxDeliveryTime()));
     order.setZone(zone);
     order.setOrderStatus(OrderStatus.REVIEW);
     order.setTotalVolume(BigDecimal.valueOf(request.getTotalVolume()));
@@ -199,7 +220,7 @@ public class OrderService {
 
   private String getAddress(AddressDto fromAddressDto) {
     return String.format("%s, %s, %s, %s", fromAddressDto.address(), fromAddressDto.district(),
-        fromAddressDto.city(), fromAddressDto.state());
+      fromAddressDto.city(), fromAddressDto.state());
   }
 
   private Zone getZoneForRequest(SolvePackingRequest request) {
@@ -209,12 +230,11 @@ public class OrderService {
       throw new IllegalArgumentException("No zone found for the given state: " + toAddress.state());
     }
     List<Zone> cityZone =
-        stateZone.stream().filter(zone -> zone.getCity().equalsIgnoreCase(toAddress.city()))
-            .toList();
+      stateZone.stream().filter(zone -> zone.getCity().equalsIgnoreCase(toAddress.city())).toList();
     return cityZone.stream().filter(zone -> hasDistrict(zone, toAddress)).findFirst().orElseGet(
-        () -> cityZone.stream().filter(zone -> zone.getDistrict().equalsIgnoreCase("*")).findFirst()
-            .orElseThrow(() -> new IllegalArgumentException(
-                "No zone found for the given district: " + toAddress.district())));
+      () -> cityZone.stream().filter(zone -> zone.getDistrict().equalsIgnoreCase("*")).findFirst()
+        .orElseThrow(() -> new IllegalArgumentException(
+          "No zone found for the given district: " + toAddress.district())));
   }
 
   private boolean hasDistrict(Zone zone, AddressDto toAddress) {
@@ -238,8 +258,8 @@ public class OrderService {
 
   private Truck findSimilarDimensionsTruck(SolutionDto solution, Order order) {
     return truckRepository.findSimularDimensionsTruck(solution.getTruck().getWidth(),
-            solution.getTruck().getLength())
-        .orElseThrow(() -> new IllegalArgumentException("No truck available"));
+        solution.getTruck().getLength())
+      .orElseThrow(() -> new IllegalArgumentException("No truck available"));
   }
 
   private boolean isTruckAvailable(Truck truck) {
@@ -250,7 +270,7 @@ public class OrderService {
     OrderPallet orderPallet = new OrderPallet();
 
     Pallet pallet = palletRepository.findByWidthAndLengthAndHeight(palletBulkDto.getWidth(),
-        palletBulkDto.getLength(), palletBulkDto.getHeight()).orElseGet(() -> {
+      palletBulkDto.getLength(), palletBulkDto.getHeight()).orElseGet(() -> {
       Pallet newPallet = new Pallet();
       newPallet.setWidth(palletBulkDto.getWidth());
       newPallet.setLength(palletBulkDto.getLength());
@@ -273,15 +293,15 @@ public class OrderService {
   }
 
   private BigDecimal calculateOrderAmount(SolutionDto solution, SolvePackingRequest request,
-      Zone zone) {
+    Zone zone) {
     //    return zone.getFee().multiply(BigDecimal.valueOf(solution.getTruck().getMultiplayer()));
     if (request.getToAddress().city().equalsIgnoreCase("lima")) {
       Zone requestZone =
-          zoneRepository.findZoneByDistrictContainingIgnoreCase(request.getToAddress().district())
-              .orElseThrow();
+        zoneRepository.findZoneByDistrictContainingIgnoreCase(request.getToAddress().district())
+          .orElseThrow();
       PriceCondition matchCondition =
-          priceConditionRepository.findByVolumeAndWeight(request.getTotalVolume(),
-              request.getTotalWeight()).orElseThrow();
+        priceConditionRepository.findByVolumeAndWeight(request.getTotalVolume(),
+          request.getTotalWeight()).orElseThrow();
       Price price = priceRepository.findByZoneAndPriceCondition(requestZone, matchCondition);
       return price.getPrice();
     }
@@ -298,15 +318,14 @@ public class OrderService {
     List<LocalTime> allSlots = generateAllTimeSlots(START_TIME, END_TIME);
     LocalDate localDate = LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
     List<LocalDateTime> notAvailableSlots =
-        orderRepository.findNotAvailableSlots(localDate.atStartOfDay(),
-            localDate.atTime(23, 59, 59));
+      orderRepository.findNotAvailableSlots(localDate.atStartOfDay(), localDate.atTime(23, 59, 59));
     List<LocalTime> notAvailableTimes =
-        notAvailableSlots.stream().map(LocalDateTime::toLocalTime).toList();
+      notAvailableSlots.stream().map(LocalDateTime::toLocalTime).toList();
     if (notAvailableSlots.isEmpty()) {
       return allSlots.stream().map(LocalTime::toString).toList();
     } else {
       return allSlots.stream().filter(slot -> !notAvailableTimes.contains(slot))
-          .map(LocalTime::toString).toList();
+        .map(LocalTime::toString).toList();
     }
   }
 
@@ -354,10 +373,19 @@ public class OrderService {
       List<OrderPallet> pallets = orderPalletRepository.getAllByOrder_Id(orderId);
       palletBulkDtoList = pallets.stream().map(orderPalletMapper::toDto).toList();
     }
+    List<DocumentDto> documentDtoList = loadDocuments(order);
     OrderDto orderDto = orderMapper.toDto(order);
+    orderDto.setDocuments(documentDtoList);
     loadTruckAndDriver(orderDto, order);
     orderDto.setPackages(palletBulkDtoList);
     return GenericResponse.success(orderDto);
+  }
+
+  private List<DocumentDto> loadDocuments(Order order) {
+    return order.getDocument().stream().map(od -> {
+      var document = od.getDocument();
+      return new DocumentDto(document.getDocumentName(), od.getLink(), document.getRequired());
+    }).toList();
   }
 
   private void loadTruckAndDriver(OrderDto orderDto, Order order) {
@@ -374,9 +402,9 @@ public class OrderService {
 
   public GenericResponse getOrderStatus(Long orderId) {
     List<OrderStatusUpdate> orderStatusUpdate =
-        orderStatusUpdateRepository.getAllByOrder_IdOrderByCreatedAtDesc(orderId);
+      orderStatusUpdateRepository.getAllByOrder_IdOrderByCreatedAtDesc(orderId);
     List<OrderStatusUpdateDto> dto =
-        orderStatusUpdate.stream().map(orderStatusUpdateMapper::toDto).toList();
+      orderStatusUpdate.stream().map(orderStatusUpdateMapper::toDto).toList();
     return GenericResponse.success(dto);
   }
 
@@ -386,7 +414,7 @@ public class OrderService {
     try {
       byte[] imageBytes = Files.readAllBytes(imagePath);
       return ResponseEntity.ok().contentType(MediaType.IMAGE_PNG)
-          .body(Base64.getEncoder().encodeToString(imageBytes));
+        .body(Base64.getEncoder().encodeToString(imageBytes));
     } catch (IOException e) {
       throw new IllegalArgumentException("Image not found");
     }
@@ -396,7 +424,7 @@ public class OrderService {
     OrderStatus statusEnum = OrderStatus.valueOf(status);
     Order order = orderRepository.getOrderById(orderId).orElseThrow();
     if (order.getOrderStatus().equals(OrderStatus.DELIVERED) || order.getOrderStatus()
-        .equals(OrderStatus.DENIED)) {
+      .equals(OrderStatus.DENIED)) {
       throw new IllegalArgumentException("Order status cannot be updated");
     }
     order.setOrderStatus(statusEnum);
@@ -405,15 +433,21 @@ public class OrderService {
   }
 
   public GenericResponse continueOrder(Long orderId, BigDecimal amount, String gpsLink,
-      boolean denied) {
+    boolean denied) {
     Order order = orderRepository.getOrderById(orderId).orElseThrow();
     switch (order.getOrderStatus()) {
       case REVIEW, PRE_APPROVED:
         updateInitialStatus(amount, order);
         break;
       case APPROVED:
-          order.setGpsLink(gpsLink);
-          break;
+        //este caso solo es cuando el camionero da a iniciar viaje
+        if (order.isDocumentPending()) {
+          throw new IllegalArgumentException("Documents pending");
+        }
+        order.setOrderStatus(OrderStatus.IN_PROGRESS);
+        //para hacer esto usar api update
+        order.setGpsLink(gpsLink);
+        break;
       default:
         throw new IllegalArgumentException("Order cannot be continued");
     }

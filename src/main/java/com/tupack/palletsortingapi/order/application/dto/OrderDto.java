@@ -37,5 +37,7 @@ public class OrderDto implements Serializable {
   DriverDto driver;
   private String gpsLink;
   private String toAddressLink;
+  private String fromAddressLink;
+  private List<DocumentDto> documents;
 
 }
