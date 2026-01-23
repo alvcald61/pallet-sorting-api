@@ -20,7 +20,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/order")
@@ -82,9 +84,11 @@ public class OrderController {
     return null;
   }
 
-  @PostMapping("/{orderId}/document")
-  public  ResponseEntity<GenericResponse> uploadDocument(){
-    return null;
+
+  @PostMapping(value = "/{orderId}/documents/{documentId}/upload", consumes = "multipart/form-data")
+  public  ResponseEntity<GenericResponse> uploadDocument(@PathVariable Long documentId,
+    @PathVariable Long orderId, @RequestParam ("file") MultipartFile file) {
+    return ResponseEntity.ok(orderService.uploadDocument(documentId, orderId, file));
   }
 
 }

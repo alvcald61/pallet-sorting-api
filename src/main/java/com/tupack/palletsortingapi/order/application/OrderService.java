@@ -73,6 +73,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
@@ -102,6 +103,7 @@ public class OrderService {
   private final DriverMapper driverMapper;
   private final OrderDocumentRepository orderDocumentRepository;
   private final WarehouseRepository warehouseRepository;
+  private final LocalFileUploader localFileUploader;
 
   public SolutionDto solvePacking(String packingType, SolvePackingRequest request) {
     if (packingType == null || packingType.isEmpty()) {
@@ -466,5 +468,26 @@ public class OrderService {
       return;
     }
     order.setOrderStatus(OrderStatus.APPROVED);
+  }
+
+  public GenericResponse uploadDocument(Long documentId, Long orderId, MultipartFile file) {
+    OrderDocument orderDocument =
+      orderDocumentRepository.getByOrderIdAndDocumentId(orderId, documentId).orElseThrow();
+    String fileName = orderId + "-" + documentId + "-" + file.getOriginalFilename();
+    try {
+      String link = localFileUploader.upload(fileName, file.getBytes());
+      orderDocument.setLink(link);
+      orderDocumentRepository.save(orderDocument);
+      Order order = orderDocument.getOrder();
+      if (order.getDocument().stream().filter(od -> od.getDocument().getRequired())
+        .allMatch(doc -> doc.getLink() != null)) {
+        order.setDocumentPending(false);
+//        order.setOrderStatus(OrderStatus.IN_PROGRESS);
+        orderRepository.save(order);
+      }
+      return GenericResponse.success(link);
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

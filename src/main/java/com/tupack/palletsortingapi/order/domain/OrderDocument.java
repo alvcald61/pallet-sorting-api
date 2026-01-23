@@ -30,13 +30,13 @@ public class OrderDocument {
   private OrderDocumentId id = new OrderDocumentId();
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @MapsId("orderId")
-  @JoinColumn(name = "order_id")
+  @MapsId("documentId")
+  @JoinColumn(name = "document_id")
   private Document document;
 
   @ManyToOne(fetch = FetchType.LAZY)
-  @MapsId("documentId")
-  @JoinColumn(name = "document_id")
+  @MapsId("orderId")
+  @JoinColumn(name = "order_id")
   private Order order;
 
   private String link;
