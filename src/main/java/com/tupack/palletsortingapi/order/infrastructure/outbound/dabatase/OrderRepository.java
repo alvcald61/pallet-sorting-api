@@ -23,4 +23,7 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
   Page<Order> getAllByClientId(Long clientId, Pageable pageable);
 
   Optional<Order> getOrderById(Long id);
+
+  @Query("select o from Order o where o.truck.driver.user.id = :id")
+  Page<Order> getAllByDriverId(Long id, Pageable pageable);
 }

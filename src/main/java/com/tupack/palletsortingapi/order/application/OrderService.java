@@ -27,18 +27,15 @@ import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
 import com.tupack.palletsortingapi.order.domain.OrderStatusUpdate;
 import com.tupack.palletsortingapi.order.domain.Pallet;
 import com.tupack.palletsortingapi.order.domain.Truck;
-import com.tupack.palletsortingapi.order.domain.TruckOrder;
 import com.tupack.palletsortingapi.order.domain.emuns.TruckStatus;
 import com.tupack.palletsortingapi.order.domain.Zone;
 import com.tupack.palletsortingapi.order.domain.id.OrderDocumentId;
-import com.tupack.palletsortingapi.order.domain.id.TruckOrderId;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.BulkRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.OrderDocumentRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.OrderPallerRepotisoty;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.OrderRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.OrderStatusUpdateRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.PalletRepository;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.TruckOrderRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.TruckRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.WarehouseRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.ZoneRepository;
@@ -83,7 +80,6 @@ public class OrderService {
   private final ZoneRepository zoneRepository;
   private final OrderRepository orderRepository;
   private final TruckRepository truckRepository;
-  private final TruckOrderRepository truckOrderRepository;
   private final PalletRepository palletRepository;
   private final TruckMapper truckMapper;
   private final UserRepository userRepository;
@@ -138,6 +134,7 @@ public class OrderService {
 
     isDateAvailable(request.getDeliveryDate(), order.getProjectedDeliveryDate(), truck);
     order.setDocument(createDocumentOrder(order));
+    order.setTruck(truck);
     Order finalOrder = orderRepository.save(order);
 
     OrderStatusUpdate orderStatusUpdate = new OrderStatusUpdate(finalOrder, OrderStatus.DELIVERED);
@@ -148,7 +145,7 @@ public class OrderService {
     } else {
       saveBulks(request, finalOrder);
     }
-    saveTruckOrderRelation(finalOrder, truck);
+    truck.getOrders().add(finalOrder);
     truck.setStatus(TruckStatus.ASSIGNED);
     truckRepository.save(truck);
     TwoDimensionSolutionResponse response = new TwoDimensionSolutionResponse();
@@ -249,15 +246,6 @@ public class OrderService {
     return false;
   }
 
-  private void saveTruckOrderRelation(Order finalOrder, Truck truck) {
-    TruckOrder truckOrder = new TruckOrder();
-    truckOrder.setOrder(finalOrder);
-    truckOrder.setTruck(truck);
-    truckOrder.setTruckOrderId(new TruckOrderId(truck.getId(), finalOrder.getId()));
-    truckOrder = truckOrderRepository.save(truckOrder);
-    finalOrder.setTruckOrder(truckOrder);
-  }
-
   private Truck findSimilarDimensionsTruck(SolutionDto solution, Order order) {
     return truckRepository.findSimularDimensionsTruck(solution.getTruck().getWidth(),
         solution.getTruck().getLength())
@@ -343,17 +331,25 @@ public class OrderService {
 
   public GenericResponse getAllOrders(Pageable pageable) {
     Client client = getLoggedInClient();
+    User user = getLoggedUser();
     Page<Order> orders;
-    if (client.getUser().getRoles().stream().anyMatch(role -> role.getName().equals("ADMIN"))) {
-      orders = orderRepository.findAll(pageable);
-    } else {
-      orders = orderRepository.getAllByClientId(client.getId(), pageable);
 
-    }
+    orders = switch (client.getUser().getRoles().stream().findFirst().orElseThrow().getName()) {
+      case "ADMIN" -> orderRepository.findAll(pageable);
+      case "CLIENT" -> orderRepository.getAllByClientId(client.getId(), pageable);
+      case "DRIVER" -> orderRepository.getAllByDriverId(user.getId(), pageable);
+      default -> throw new IllegalArgumentException("Invalid role");
+    };
     GenericResponse response = new GenericResponse();
     response.setPageInfo(getPageInfo(orders));
     response.setData(orders.get().map(orderMapper::toDto));
     return response;
+  }
+
+  private User getLoggedUser() {
+    SecurityContext securityContext = SecurityContextHolder.getContext();
+    User user = (User) securityContext.getAuthentication().getPrincipal();
+    return user;
   }
 
   private PageResponse getPageInfo(Page<Order> orders) {
@@ -392,9 +388,8 @@ public class OrderService {
   }
 
   private void loadTruckAndDriver(OrderDto orderDto, Order order) {
-    TruckOrder truckOrder = order.getTruckOrder();
-    if (truckOrder != null) {
-      Truck truck = truckOrder.getTruck();
+    Truck truck = order.getTruck();
+    if (truck != null) {
       orderDto.setTruck(truckMapper.toDto(truck));
       Driver driver = truck.getDriver();
       if (driver != null) {

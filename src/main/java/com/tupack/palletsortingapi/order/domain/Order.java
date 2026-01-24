@@ -56,8 +56,9 @@ public class Order extends BaseEntity {
   @OneToMany
   private List<Bulk> bulkList;
 
-  @OneToOne(mappedBy = "order", orphanRemoval = true)
-  private TruckOrder truckOrder;
+  @ManyToOne
+  @JoinColumn(name = "truckId", nullable = true)
+  private Truck truck;
 
   private String gpsLink;
   private String addressLink;
@@ -67,6 +68,7 @@ public class Order extends BaseEntity {
   private Warehouse warehouse;
 
   private boolean isDocumentPending = true;
+
 
   @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<OrderDocument> document;

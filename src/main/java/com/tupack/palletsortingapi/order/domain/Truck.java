@@ -36,7 +36,7 @@ public class Truck extends BaseEntity {
   private Double multiplayer;
   @OneToOne
   private Driver driver;
-  @OneToMany(mappedBy = "truck", orphanRemoval = true)
-  private List<TruckOrder> truckOrder;
+  @OneToMany(mappedBy = "truck")
+  private List<Order> orders;
 
 }

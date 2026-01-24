@@ -96,9 +96,9 @@ public class DashboardService {
     List<Order> allOrders = orderRepository.findAll();
 
     return allOrders.stream().filter(
-            order -> order.getTruckOrder() != null && order.getTruckOrder().getTruck() != null
-                && order.getTruckOrder().getTruck().getDriver() != null).collect(
-            Collectors.groupingBy(order -> order.getTruckOrder().getTruck().getDriver(),
+            order -> order.getTruck() != null
+                && order.getTruck().getDriver() != null).collect(
+            Collectors.groupingBy(order -> order.getTruck().getDriver(),
                 Collectors.counting())).entrySet().stream().map(
             entry -> OrdersByDriverDTO.builder().id(entry.getKey().getDriverId().toString()).driverName(
                 entry.getKey().getUser() != null ? entry.getKey().getUser().getFirstName() + " "
@@ -115,9 +115,9 @@ public class DashboardService {
     List<Order> allOrders = orderRepository.findAll();
 
     return allOrders.stream()
-        .filter(order -> order.getTruckOrder() != null && order.getTruckOrder().getTruck() != null)
+        .filter(order -> order != null && order.getTruck() != null)
         .collect(
-            Collectors.groupingBy(order -> order.getTruckOrder().getTruck(), Collectors.counting()))
+            Collectors.groupingBy(Order::getTruck, Collectors.counting()))
         .entrySet().stream().map(
             entry -> OrdersByTruckDTO.builder().id(entry.getKey().getId().toString())
                 .truckPlate(entry.getKey().getLicensePlate())
