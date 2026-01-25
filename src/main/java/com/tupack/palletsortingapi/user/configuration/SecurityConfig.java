@@ -1,6 +1,6 @@
 package com.tupack.palletsortingapi.user.configuration;
 
-import com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase.UserRepository;
+import com.tupack.palletsortingapi.user.infrastructure.outbound.database.UserRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

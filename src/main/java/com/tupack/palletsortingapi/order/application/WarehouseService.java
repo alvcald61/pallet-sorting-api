@@ -3,7 +3,7 @@ package com.tupack.palletsortingapi.order.application;
 import com.tupack.palletsortingapi.order.application.dto.GenericResponse;
 import com.tupack.palletsortingapi.order.application.mapper.WarehouseMapper;
 import com.tupack.palletsortingapi.order.domain.Warehouse;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.WarehouseRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.WarehouseRepository;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;

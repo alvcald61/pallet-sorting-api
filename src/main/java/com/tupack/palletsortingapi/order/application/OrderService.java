@@ -30,23 +30,23 @@ import com.tupack.palletsortingapi.order.domain.Truck;
 import com.tupack.palletsortingapi.order.domain.emuns.TruckStatus;
 import com.tupack.palletsortingapi.order.domain.Zone;
 import com.tupack.palletsortingapi.order.domain.id.OrderDocumentId;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.BulkRepository;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.OrderDocumentRepository;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.OrderPallerRepotisoty;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.OrderRepository;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.OrderStatusUpdateRepository;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.PalletRepository;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.TruckRepository;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.WarehouseRepository;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.ZoneRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.BulkRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderDocumentRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderPallerRepotisoty;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderStatusUpdateRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.PalletRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.TruckRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.WarehouseRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.ZoneRepository;
 import com.tupack.palletsortingapi.user.application.mapper.DriverMapper;
 import com.tupack.palletsortingapi.user.domain.Client;
 import com.tupack.palletsortingapi.user.domain.Driver;
 import com.tupack.palletsortingapi.user.domain.User;
-import com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase.ClientRepository;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.PriceConditionRepository;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.PriceRepository;
-import com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase.UserRepository;
+import com.tupack.palletsortingapi.user.infrastructure.outbound.database.ClientRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.PriceConditionRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.PriceRepository;
+import com.tupack.palletsortingapi.user.infrastructure.outbound.database.UserRepository;
 import com.tupack.palletsortingapi.utils.PackingType;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -136,9 +136,7 @@ public class OrderService {
     order.setDocument(createDocumentOrder(order));
     order.setTruck(truck);
     Order finalOrder = orderRepository.save(order);
-
-    OrderStatusUpdate orderStatusUpdate = new OrderStatusUpdate(finalOrder, OrderStatus.DELIVERED);
-    orderStatusUpdateRepository.save(orderStatusUpdate);
+    saveOrderStatusUpdate(finalOrder);
 
     if (!packingType.equals(PackingType.BULK.getName())) {
       savePallets(request, finalOrder);
@@ -416,7 +414,7 @@ public class OrderService {
     Path imagePath = Path.of(imageUrl);
     try {
       byte[] imageBytes = Files.readAllBytes(imagePath);
-      return ResponseEntity.ok().contentType(MediaType.IMAGE_PNG)
+      return ResponseEntity.ok().contentType(MediaType.TEXT_PLAIN)
         .body(Base64.getEncoder().encodeToString(imageBytes));
     } catch (IOException e) {
       throw new IllegalArgumentException("Image not found");
@@ -432,23 +430,34 @@ public class OrderService {
     }
     order.setOrderStatus(statusEnum);
     orderRepository.save(order);
+    saveOrderStatusUpdate(order);
     return GenericResponse.success("Order status updated successfully");
   }
 
   public GenericResponse continueOrder(Long orderId, BigDecimal amount, String gpsLink,
     boolean denied) {
     Order order = orderRepository.getOrderById(orderId).orElseThrow();
+    OrderStatus previousStatus = order.getOrderStatus();
     switch (order.getOrderStatus()) {
       case REVIEW, PRE_APPROVED:
         updateInitialStatus(amount, order);
+        if (order.getOrderStatus().equals(OrderStatus.APPROVED) && order.isDocumentPending()) {
+          order.setOrderStatus(OrderStatus.DOCUMENT_PENDING);
+        }
         break;
       case APPROVED:
-        //este caso solo es cuando el camionero da a iniciar viaje
+        if (order.isDocumentPending()) {
+          order.setOrderStatus(OrderStatus.DOCUMENT_PENDING);
+        } else {
+          order.setOrderStatus(OrderStatus.IN_PROGRESS);
+          order.setGpsLink(gpsLink);
+        }
+        break;
+      case DOCUMENT_PENDING:
         if (order.isDocumentPending()) {
           throw new IllegalArgumentException("Documents pending");
         }
         order.setOrderStatus(OrderStatus.IN_PROGRESS);
-        //para hacer esto usar api update
         order.setGpsLink(gpsLink);
         break;
       default:
@@ -458,6 +467,9 @@ public class OrderService {
       order.setOrderStatus(OrderStatus.DENIED);
     }
     orderRepository.save(order);
+    if (!previousStatus.equals(order.getOrderStatus())) {
+      saveOrderStatusUpdate(order);
+    }
     return GenericResponse.success("Order status updated successfully");
   }
 
@@ -482,12 +494,15 @@ public class OrderService {
       if (order.getDocument().stream().filter(od -> od.getDocument().getRequired())
         .allMatch(doc -> doc.getLink() != null)) {
         order.setDocumentPending(false);
-//        order.setOrderStatus(OrderStatus.IN_PROGRESS);
         orderRepository.save(order);
       }
       return GenericResponse.success(link);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
+  }
+
+  private void saveOrderStatusUpdate(Order order) {
+    orderStatusUpdateRepository.save(new OrderStatusUpdate(order, order.getOrderStatus()));
   }
 }

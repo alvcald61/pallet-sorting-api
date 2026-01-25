@@ -5,7 +5,7 @@ import com.tupack.palletsortingapi.order.application.dto.GenericResponse;
 import com.tupack.palletsortingapi.order.application.dto.PalletDto;
 import com.tupack.palletsortingapi.order.application.mapper.PalletMapper;
 import com.tupack.palletsortingapi.order.domain.Pallet;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.PalletRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.PalletRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;

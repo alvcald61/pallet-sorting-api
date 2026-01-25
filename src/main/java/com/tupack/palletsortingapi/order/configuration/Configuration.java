@@ -1,7 +1,7 @@
 package com.tupack.palletsortingapi.order.configuration;
 
 import com.tupack.palletsortingapi.order.domain.Zone;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.ZoneRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.ZoneRepository;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;

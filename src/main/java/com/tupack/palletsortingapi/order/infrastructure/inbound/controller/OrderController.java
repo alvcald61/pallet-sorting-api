@@ -58,7 +58,7 @@ public class OrderController {
     return orderService.getOrderStatus(orderId);
   }
 
-  @GetMapping(value = "/{orderId}/image", produces = "image/png")
+  @GetMapping(value = "/{orderId}/image", produces = "text/plain")
   public ResponseEntity<String> getOrderImage(@PathVariable Long orderId) {
     return orderService.getOrderImage(orderId);
   }

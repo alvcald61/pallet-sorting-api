@@ -1,7 +1,7 @@
 package com.tupack.palletsortingapi.order.application.packing;
 
 import com.tupack.palletsortingapi.order.domain.Truck;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.TruckRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.TruckRepository;
 import com.tupack.palletsortingapi.order.application.dto.PalletBulkDto;
 import com.tupack.palletsortingapi.order.application.dto.SolutionDto;
 import com.tupack.palletsortingapi.order.application.dto.SolvePackingRequest;

@@ -5,7 +5,7 @@ import com.tupack.palletsortingapi.user.application.dto.CreateRoleRequest;
 import com.tupack.palletsortingapi.user.application.dto.RoleDto;
 import com.tupack.palletsortingapi.user.application.mapper.RoleMapper;
 import com.tupack.palletsortingapi.user.domain.Role;
-import com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase.RoleRepository;
+import com.tupack.palletsortingapi.user.infrastructure.outbound.database.RoleRepository;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

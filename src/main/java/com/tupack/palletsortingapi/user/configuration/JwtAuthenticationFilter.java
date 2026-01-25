@@ -1,6 +1,6 @@
 package com.tupack.palletsortingapi.user.configuration;
 
-import com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase.UserRepository;
+import com.tupack.palletsortingapi.user.infrastructure.outbound.database.UserRepository;
 import com.tupack.palletsortingapi.user.application.impl.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

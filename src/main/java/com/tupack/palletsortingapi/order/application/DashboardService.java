@@ -9,10 +9,10 @@ import com.tupack.palletsortingapi.order.application.dto.dashboard.PendingOrderD
 import com.tupack.palletsortingapi.order.application.dto.dashboard.PerformanceMetricsDTO;
 import com.tupack.palletsortingapi.order.domain.Order;
 import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.OrderRepository;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.TruckRepository;
-import com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase.ClientRepository;
-import com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase.DriverRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.TruckRepository;
+import com.tupack.palletsortingapi.user.infrastructure.outbound.database.ClientRepository;
+import com.tupack.palletsortingapi.user.infrastructure.outbound.database.DriverRepository;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;

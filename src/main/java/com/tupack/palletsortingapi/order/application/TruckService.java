@@ -4,9 +4,9 @@ import com.tupack.palletsortingapi.order.application.dto.GenericResponse;
 import com.tupack.palletsortingapi.order.application.dto.TruckDto;
 import com.tupack.palletsortingapi.order.application.mapper.TruckMapper;
 import com.tupack.palletsortingapi.order.domain.Truck;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.TruckRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.TruckRepository;
 import com.tupack.palletsortingapi.user.domain.Driver;
-import com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase.DriverRepository;
+import com.tupack.palletsortingapi.user.infrastructure.outbound.database.DriverRepository;
 import org.springframework.stereotype.Service;
 
 @Service
