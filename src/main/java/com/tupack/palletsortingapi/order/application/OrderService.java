@@ -50,21 +50,11 @@ import com.tupack.palletsortingapi.user.infrastructure.outbound.database.UserRep
 import com.tupack.palletsortingapi.utils.PackingType;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -278,140 +268,28 @@ public class OrderService {
     Zone zone) {
     //    return zone.getFee().multiply(BigDecimal.valueOf(solution.getTruck().getMultiplayer()));
     if (request.getToAddress().city().equalsIgnoreCase("lima")) {
-      Zone requestZone =
-        zoneRepository.findZoneByDistrictContainingIgnoreCase(request.getToAddress().district())
-          .orElseThrow();
-      PriceCondition matchCondition =
-        priceConditionRepository.findByVolumeAndWeight(request.getTotalVolume(),
-          request.getTotalWeight()).orElseThrow();
-      Price price = priceRepository.findByZoneAndPriceCondition(requestZone, matchCondition);
-      return price.getPrice();
-    }
-    return null;
-  }
-
-  private Client getLoggedInClient() {
-    SecurityContext securityContext = SecurityContextHolder.getContext();
-    User user = (User) securityContext.getAuthentication().getPrincipal();
-    return clientRepository.findClientByUserId(user.getId()).orElseThrow();
+  public TwoDimensionSolutionResponse scheduleOrder(String packingType, SolvePackingRequest request) {
+    return schedulingService.scheduleOrder(packingType, request);
   }
 
   public List<String> getAvailableTimeSlots(String date) {
-    List<LocalTime> allSlots = generateAllTimeSlots(START_TIME, END_TIME);
-    LocalDate localDate = LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-    List<LocalDateTime> notAvailableSlots =
-      orderRepository.findNotAvailableSlots(localDate.atStartOfDay(), localDate.atTime(23, 59, 59));
-    List<LocalTime> notAvailableTimes =
-      notAvailableSlots.stream().map(LocalDateTime::toLocalTime).toList();
-    if (notAvailableSlots.isEmpty()) {
-      return allSlots.stream().map(LocalTime::toString).toList();
-    } else {
-      return allSlots.stream().filter(slot -> !notAvailableTimes.contains(slot))
-        .map(LocalTime::toString).toList();
-    }
-  }
-
-  private List<LocalTime> generateAllTimeSlots(LocalTime startTime, LocalTime endTime) {
-    List<LocalTime> slots = new ArrayList<>();
-    LocalTime currentTime = startTime;
-    while (!currentTime.isAfter(endTime)) {
-      slots.add(currentTime);
-      currentTime = currentTime.plusHours(1);
-    }
-    return slots;
+    return queryService.getAvailableTimeSlots(date);
   }
 
   public GenericResponse getAllOrders(Pageable pageable) {
-    Client client = getLoggedInClient();
-    User user = getLoggedUser();
-    Page<Order> orders;
-
-    orders = switch (client.getUser().getRoles().stream().findFirst().orElseThrow().getName()) {
-      case "ADMIN" -> orderRepository.findAll(pageable);
-      case "CLIENT" -> orderRepository.getAllByClientId(client.getId(), pageable);
-      case "DRIVER" -> orderRepository.getAllByDriverId(user.getId(), pageable);
-      default -> throw new IllegalArgumentException("Invalid role");
-    };
-    GenericResponse response = new GenericResponse();
-    response.setPageInfo(getPageInfo(orders));
-    response.setData(orders.get().map(orderMapper::toDto));
-    return response;
-  }
-
-  private User getLoggedUser() {
-    SecurityContext securityContext = SecurityContextHolder.getContext();
-    User user = (User) securityContext.getAuthentication().getPrincipal();
-    return user;
-  }
-
-  private PageResponse getPageInfo(Page<Order> orders) {
-    PageResponse pageInfo = new PageResponse();
-    pageInfo.setPageNumber(orders.getNumber());
-    pageInfo.setPageSize(orders.getSize());
-    pageInfo.setTotalElements(orders.getTotalElements());
-    pageInfo.setTotalPages(orders.getTotalPages());
-    return pageInfo;
+    return queryService.getAllOrders(pageable);
   }
 
   public GenericResponse getOrderById(Long orderId) {
-    Order order = orderRepository.getOrderById(orderId).orElseThrow();
-    List<PalletBulkDto> palletBulkDtoList;
-    if (order.getOrderType().equals(PackingType.BULK)) {
-      List<Bulk> bulkList = bulkRepository.findAllByOrder_Id(orderId);
-      palletBulkDtoList = bulkList.stream().map(bulkMapper::toDto).toList();
-    } else {
-      List<OrderPallet> pallets = orderPalletRepository.getAllByOrder_Id(orderId);
-      palletBulkDtoList = pallets.stream().map(orderPalletMapper::toDto).toList();
-    }
-    List<DocumentDto> documentDtoList = loadDocuments(order);
-    OrderDto orderDto = orderMapper.toDto(order);
-    orderDto.setDocuments(documentDtoList);
-    loadTruckAndDriver(orderDto, order);
-    orderDto.setPackages(palletBulkDtoList);
-    return GenericResponse.success(orderDto);
-  }
-
-  private List<DocumentDto> loadDocuments(Order order) {
-    return order.getDocument().stream().map(od -> {
-      var document = od.getDocument();
-      return new DocumentDto(document.getDocumentId(), document.getDocumentName(), od.getLink(),
-        document.getRequired());
-    }).toList();
-  }
-
-  private void loadTruckAndDriver(OrderDto orderDto, Order order) {
-    Truck truck = order.getTruck();
-    if (truck != null) {
-      orderDto.setTruck(truckMapper.toDto(truck));
-      Driver driver = truck.getDriver();
-      if (driver != null) {
-        orderDto.setDriver(driverMapper.toDto(driver));
-      }
-    }
+    return queryService.getOrderById(orderId);
   }
 
   public GenericResponse getOrderStatus(Long orderId) {
-    List<OrderStatusUpdate> orderStatusUpdate =
-      orderStatusUpdateRepository.getAllByOrder_IdOrderByCreatedAtDesc(orderId);
-    List<OrderStatusUpdateDto> dto =
-      orderStatusUpdate.stream().map(orderStatusUpdateMapper::toDto).toList();
-    return GenericResponse.success(dto);
+    return queryService.getOrderStatus(orderId);
   }
 
   public ResponseEntity<String> getOrderImage(Long orderId) {
-    Order order = orderRepository.getOrderById(orderId).orElseThrow();
-    String imageUrl = order.getSolutionImageUrl();
-    if(!imageUrl.endsWith(".png")){
-      imageUrl = imageUrl + ".png";
-    }
-    Path imagePath = Path.of(imageUrl);
-    try {
-      byte[] imageBytes = Files.readAllBytes(imagePath);
-      return ResponseEntity.ok().contentType(MediaType.TEXT_PLAIN)
-        .body(Base64.getEncoder().encodeToString(imageBytes));
-    } catch (IOException e) {
-      throw new IllegalArgumentException("Image not found");
-    }
+    return queryService.getOrderImage(orderId);
   }
 
   public GenericResponse updateOrderStatus(Long orderId, String status) {
