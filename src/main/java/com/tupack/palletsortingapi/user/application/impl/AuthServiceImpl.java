@@ -7,7 +7,7 @@ import com.tupack.palletsortingapi.user.infrastructure.outbound.database.UserRep
 import com.tupack.palletsortingapi.user.application.AuthService;
 import com.tupack.palletsortingapi.user.application.dto.AuthResponse;
 import com.tupack.palletsortingapi.user.application.dto.LoginRequest;
-import com.tupack.palletsortingapi.order.application.dto.RegisterRequest;
+import com.tupack.palletsortingapi.user.application.dto.RegisterRequest;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;

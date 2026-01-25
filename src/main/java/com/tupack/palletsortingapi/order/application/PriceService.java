@@ -1,6 +1,6 @@
 package com.tupack.palletsortingapi.order.application;
 
-import com.tupack.palletsortingapi.order.application.dto.GenericResponse;
+import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.order.application.dto.PriceDto;
 import com.tupack.palletsortingapi.order.application.mapper.PriceConditionDtoMapper;
 import com.tupack.palletsortingapi.order.application.mapper.PriceDtoMapper;

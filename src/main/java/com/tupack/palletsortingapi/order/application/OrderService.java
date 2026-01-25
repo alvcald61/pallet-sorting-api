@@ -1,12 +1,6 @@
 package com.tupack.palletsortingapi.order.application;
 
-import com.tupack.palletsortingapi.order.application.dto.AddressDto;
-import com.tupack.palletsortingapi.order.application.dto.DocumentDto;
-import com.tupack.palletsortingapi.order.application.dto.GenericResponse;
-import com.tupack.palletsortingapi.order.application.dto.OrderDto;
-import com.tupack.palletsortingapi.order.application.dto.OrderStatusUpdateDto;
-import com.tupack.palletsortingapi.order.application.dto.PageResponse;
-import com.tupack.palletsortingapi.order.application.dto.PalletBulkDto;
+import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.order.application.dto.SolutionDto;
 import com.tupack.palletsortingapi.order.application.dto.SolvePackingRequest;
 import com.tupack.palletsortingapi.order.application.dto.TwoDimensionSolutionResponse;
@@ -119,64 +113,12 @@ public class OrderService {
   }
 
   public GenericResponse updateOrderStatus(Long orderId, String status) {
-    OrderStatus statusEnum = OrderStatus.valueOf(status);
-    Order order = orderRepository.getOrderById(orderId).orElseThrow();
-    if (order.getOrderStatus().equals(OrderStatus.DELIVERED) || order.getOrderStatus()
-      .equals(OrderStatus.DENIED)) {
-      throw new IllegalArgumentException("Order status cannot be updated");
-    }
-    order.setOrderStatus(statusEnum);
-    orderRepository.save(order);
-    saveOrderStatusUpdate(order);
-    return GenericResponse.success("Order status updated successfully");
+    return statusService.updateOrderStatus(orderId, status);
   }
 
   public GenericResponse continueOrder(Long orderId, BigDecimal amount, String gpsLink,
-    boolean denied) {
-    Order order = orderRepository.getOrderById(orderId).orElseThrow();
-    OrderStatus previousStatus = order.getOrderStatus();
-    switch (order.getOrderStatus()) {
-      case REVIEW, PRE_APPROVED:
-        updateInitialStatus(amount, order);
-        if (order.getOrderStatus().equals(OrderStatus.APPROVED) && order.isDocumentPending()) {
-          order.setOrderStatus(OrderStatus.DOCUMENT_PENDING);
-        }
-        break;
-      case APPROVED:
-        if (order.isDocumentPending()) {
-          order.setOrderStatus(OrderStatus.DOCUMENT_PENDING);
-        } else {
-          order.setOrderStatus(OrderStatus.IN_PROGRESS);
-          order.setGpsLink(gpsLink);
-        }
-        break;
-      case DOCUMENT_PENDING:
-        if (order.isDocumentPending()) {
-          throw new IllegalArgumentException("Documents pending");
-        }
-        order.setOrderStatus(OrderStatus.IN_PROGRESS);
-        order.setGpsLink(gpsLink);
-        break;
-      default:
-        throw new IllegalArgumentException("Order cannot be continued");
-    }
-    if (denied) {
-      order.setOrderStatus(OrderStatus.DENIED);
-    }
-    orderRepository.save(order);
-    if (!previousStatus.equals(order.getOrderStatus())) {
-      saveOrderStatusUpdate(order);
-    }
-    return GenericResponse.success("Order status updated successfully");
-  }
-
-  private static void updateInitialStatus(BigDecimal amount, Order order) {
-    if (amount != null) {
-      order.setAmount(amount);
-      order.setOrderStatus(OrderStatus.PRE_APPROVED);
-      return;
-    }
-    order.setOrderStatus(OrderStatus.APPROVED);
+      boolean denied) {
+    return statusService.continueOrder(orderId, amount, gpsLink, denied);
   }
 
   public GenericResponse uploadDocument(Long documentId, Long orderId, MultipartFile file) {

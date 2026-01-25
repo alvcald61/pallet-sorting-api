@@ -1,6 +1,6 @@
 package com.tupack.palletsortingapi.user.application;
 
-import com.tupack.palletsortingapi.order.application.dto.GenericResponse;
+import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.user.application.dto.CreateDriverRequest;
 import com.tupack.palletsortingapi.user.application.mapper.DriverMapper;
 import com.tupack.palletsortingapi.user.domain.Driver;

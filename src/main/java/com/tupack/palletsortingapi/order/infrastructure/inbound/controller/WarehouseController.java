@@ -1,7 +1,7 @@
 package com.tupack.palletsortingapi.order.infrastructure.inbound.controller;
 
 import com.tupack.palletsortingapi.order.application.WarehouseService;
-import com.tupack.palletsortingapi.order.application.dto.GenericResponse;
+import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.order.domain.Warehouse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

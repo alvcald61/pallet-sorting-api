@@ -1,4 +1,4 @@
-package com.tupack.palletsortingapi.order.application.dto;
+package com.tupack.palletsortingapi.common.dto;
 
 import lombok.Data;
 

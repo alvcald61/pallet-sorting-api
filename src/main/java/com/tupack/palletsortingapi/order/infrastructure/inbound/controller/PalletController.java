@@ -2,7 +2,7 @@ package com.tupack.palletsortingapi.order.infrastructure.inbound.controller;
 
 import com.tupack.palletsortingapi.order.application.PalletService;
 import com.tupack.palletsortingapi.order.application.dto.CreatePalletRequest;
-import com.tupack.palletsortingapi.order.application.dto.GenericResponse;
+import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.order.application.dto.PalletDto;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

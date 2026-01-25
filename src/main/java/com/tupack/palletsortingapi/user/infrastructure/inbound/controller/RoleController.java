@@ -1,6 +1,6 @@
 package com.tupack.palletsortingapi.user.infrastructure.inbound.controller;
 
-import com.tupack.palletsortingapi.order.application.dto.GenericResponse;
+import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.user.application.RoleService;
 import com.tupack.palletsortingapi.user.application.dto.CreateRoleRequest;
 import lombok.RequiredArgsConstructor;

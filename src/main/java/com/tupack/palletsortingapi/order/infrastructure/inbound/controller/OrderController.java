@@ -1,7 +1,7 @@
 package com.tupack.palletsortingapi.order.infrastructure.inbound.controller;
 
 import com.tupack.palletsortingapi.order.application.OrderService;
-import com.tupack.palletsortingapi.order.application.dto.GenericResponse;
+import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.order.application.dto.SolutionDto;
 import com.tupack.palletsortingapi.order.application.dto.SolvePackingRequest;
 import com.tupack.palletsortingapi.order.application.dto.TwoDimensionSolutionResponse;

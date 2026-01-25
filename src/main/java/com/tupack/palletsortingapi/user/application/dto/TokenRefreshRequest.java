@@ -1,4 +1,4 @@
-package com.tupack.palletsortingapi.order.application.dto;
+package com.tupack.palletsortingapi.user.application.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
