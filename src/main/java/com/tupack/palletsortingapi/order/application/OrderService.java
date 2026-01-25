@@ -4,11 +4,6 @@ import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.order.application.dto.SolutionDto;
 import com.tupack.palletsortingapi.order.application.dto.SolvePackingRequest;
 import com.tupack.palletsortingapi.order.application.dto.TwoDimensionSolutionResponse;
-import com.tupack.palletsortingapi.user.application.mapper.DriverMapper;
-import com.tupack.palletsortingapi.user.domain.Client;
-import com.tupack.palletsortingapi.user.domain.Driver;
-import com.tupack.palletsortingapi.user.domain.User;
-import com.tupack.palletsortingapi.user.infrastructure.outbound.database.ClientRepository;
 import com.tupack.palletsortingapi.order.application.service.OrderDocumentService;
 import com.tupack.palletsortingapi.order.application.service.OrderPackingService;
 import com.tupack.palletsortingapi.order.application.service.OrderQueryService;
@@ -26,8 +21,6 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class OrderService {
 
-  private final UserRepository userRepository;
-  private final ClientRepository clientRepository;
   private final OrderPackingService packingService;
   private final OrderSchedulingService schedulingService;
   private final OrderQueryService queryService;
