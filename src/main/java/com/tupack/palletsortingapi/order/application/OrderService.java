@@ -76,7 +76,6 @@ import org.springframework.web.multipart.MultipartFile;
 @RequiredArgsConstructor
 public class OrderService {
 
-  private final PackingStrategyExecutor context;
   private final ZoneRepository zoneRepository;
   private final OrderRepository orderRepository;
   private final TruckRepository truckRepository;
@@ -100,20 +99,13 @@ public class OrderService {
   private final OrderDocumentRepository orderDocumentRepository;
   private final WarehouseRepository warehouseRepository;
   private final LocalFileUploader localFileUploader;
+  private final OrderPackingService packingService;
+  private final OrderSchedulingService schedulingService;
+  private final OrderQueryService queryService;
+  private final OrderStatusService statusService;
+  private final OrderDocumentService documentService;
 
   public SolutionDto solvePacking(String packingType, SolvePackingRequest request) {
-    if (packingType == null || packingType.isEmpty()) {
-      throw new IllegalArgumentException("Packing type must not be null or empty");
-    }
-    return switch (PackingType.valueOf(packingType)) {
-      case PackingType.BULK -> context.execute(PackingType.BULK.getName(), request);
-      case PackingType.TWO_DIMENSIONAL ->
-        context.execute(PackingType.TWO_DIMENSIONAL.getName(), request);
-      case PackingType.THREE_DIMENSIONAL ->
-        context.execute(PackingType.THREE_DIMENSIONAL.getName(), request);
-    };
-  }
-
   @Transactional
   public TwoDimensionSolutionResponse scheduleOrder(String packingType,
     SolvePackingRequest request) {
@@ -279,6 +271,7 @@ public class OrderService {
 
   private void isDateAvailable(LocalDateTime startDate, LocalDateTime endDate, Truck truck) {
     orderRepository.existsOrderInDateRange(startDate, endDate, truck);
+    return packingService.solvePacking(packingType, request);
   }
 
   private BigDecimal calculateOrderAmount(SolutionDto solution, SolvePackingRequest request,
