@@ -51,15 +51,10 @@ import com.tupack.palletsortingapi.utils.PackingType;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.Map;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import jakarta.transaction.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -96,178 +91,9 @@ public class OrderService {
   private final OrderDocumentService documentService;
 
   public SolutionDto solvePacking(String packingType, SolvePackingRequest request) {
-  @Transactional
-  public TwoDimensionSolutionResponse scheduleOrder(String packingType,
-    SolvePackingRequest request) {
-    SolutionDto solution = solvePacking(packingType, request);
-    Truck truck = solution.getTruck();
-    Client client = getClient(request);
-    Order order = initializeOrder(packingType, request, client, solution);
-
-    if (!isTruckAvailable(truck)) {
-      truck = findSimilarDimensionsTruck(solution, order);
-    }
-
-    if (packingType.equalsIgnoreCase(PackingType.TWO_DIMENSIONAL.name())
-      || packingType.equalsIgnoreCase(PackingType.THREE_DIMENSIONAL.name())) {
-      order.setSolution(solution.getTruckDistributionUrl());
-      order.setSolutionImageUrl(solution.getTruckDistributionImageUrl());
-    }
-
-    isDateAvailable(request.getDeliveryDate(), order.getProjectedDeliveryDate(), truck);
-    order.setDocument(createDocumentOrder(order));
-    order.setTruck(truck);
-    Order finalOrder = orderRepository.save(order);
-    saveOrderStatusUpdate(finalOrder);
-
-    if (!packingType.equals(PackingType.BULK.getName())) {
-      savePallets(request, finalOrder);
-    } else {
-      saveBulks(request, finalOrder);
-    }
-    truck.getOrders().add(finalOrder);
-    truck.setStatus(TruckStatus.ASSIGNED);
-    truckRepository.save(truck);
-    TwoDimensionSolutionResponse response = new TwoDimensionSolutionResponse();
-    response.setImageUrl(solution.getTruckDistributionImageUrl());
-    response.setTruck(truckMapper.toDto(solution.getTruck()));
-    return response;
-  }
-
-  private List<OrderDocument> createDocumentOrder(Order finalOrder) {
-    return finalOrder.getWarehouse().getDocuments().stream().map(warehouseDocument -> {
-      //crear documento por cada documento del almacen
-      return new OrderDocument(
-        new OrderDocumentId(finalOrder.getId(), warehouseDocument.getDocumentId()),
-        warehouseDocument, finalOrder, null);
-    }).toList();
-  }
-
-  private void saveBulks(SolvePackingRequest request, Order finalOrder) {
-    List<Bulk> bulkList = request.getPallets().stream().map(
-        pallet -> new Bulk(finalOrder, pallet.getQuantity(), pallet.getVolume(), pallet.getWeight(), pallet.getHeight()))
-      .toList();
-    bulkRepository.saveAll(bulkList);
-    finalOrder.setBulkList(bulkList);
-  }
-
-  private void savePallets(SolvePackingRequest request, Order finalOrder) {
-    List<OrderPallet> orderPallets = request.getPallets().stream()
-      .map(palletBulkDto -> mapToOrderPallet(palletBulkDto, finalOrder)).toList();
-    orderPallets = orderPalletRepository.saveAll(orderPallets);
-    finalOrder.setOrderPallets(orderPallets);
-  }
-
-  private @NonNull Order initializeOrder(String packingType, SolvePackingRequest request,
-    Client client, SolutionDto solution) {
-    Order order = new Order();
-    order.setOrderType(PackingType.valueOf(packingType));
-    order.setClient(client);
-    order.setPickupDate(request.getDeliveryDate());
-    Zone zone = getZoneForRequest(request);
-    if (client.isTrust()) {
-      order.setAmount(calculateOrderAmount(solution, request, zone));
-    }
-    order.setFromAddress(getAddress(request.getFromAddress()));
-    order.setToAddress(getAddress(request.getToAddress()));
-    order.setAddressLink(request.getToAddress().locationLink());
-    Warehouse warehouse =
-      warehouseRepository.findById(request.getFromAddress().warehouseId()).orElseThrow();
-    order.setWarehouse(warehouse);
-    order.setProjectedDeliveryDate(
-      request.getDeliveryDate().plusMinutes(zone.getMaxDeliveryTime()));
-    order.setZone(zone);
-    order.setOrderStatus(OrderStatus.REVIEW);
-    order.setTotalVolume(BigDecimal.valueOf(request.getTotalVolume()));
-    order.setTotalWeight(BigDecimal.valueOf(request.getTotalWeight()));
-
-    return order;
-  }
-
-  private Client getClient(SolvePackingRequest request) {
-    Client client;
-    if (request.getUserId() != null && !request.getUserId().isEmpty()) {
-      client = getUserIdClient(request.getUserId());
-    } else {
-      client = getLoggedInClient();
-    }
-    return client;
-  }
-
-  private Client getUserIdClient(String userId) {
-    return clientRepository.findClientByUserId(Long.valueOf(userId)).orElseThrow();
-  }
-
-  private String getAddress(AddressDto fromAddressDto) {
-    return String.format("%s, %s, %s, %s", fromAddressDto.address(), fromAddressDto.district(),
-      fromAddressDto.city(), fromAddressDto.state());
-  }
-
-  private Zone getZoneForRequest(SolvePackingRequest request) {
-    AddressDto toAddress = request.getToAddress();
-    List<Zone> stateZone = zoneMap.get(toAddress.state().toLowerCase());
-    if (stateZone == null || stateZone.isEmpty()) {
-      throw new IllegalArgumentException("No zone found for the given state: " + toAddress.state());
-    }
-    List<Zone> cityZone =
-      stateZone.stream().filter(zone -> zone.getCity().equalsIgnoreCase(toAddress.city())).toList();
-    return cityZone.stream().filter(zone -> hasDistrict(zone, toAddress)).findFirst().orElseGet(
-      () -> cityZone.stream().filter(zone -> zone.getDistrict().equalsIgnoreCase("*")).findFirst()
-        .orElseThrow(() -> new IllegalArgumentException(
-          "No zone found for the given district: " + toAddress.district())));
-  }
-
-  private boolean hasDistrict(Zone zone, AddressDto toAddress) {
-    String[] districts = zone.getDistrict().split(",");
-    for (String district : districts) {
-      if (district.trim().equalsIgnoreCase(toAddress.district().trim())) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  private Truck findSimilarDimensionsTruck(SolutionDto solution, Order order) {
-    return truckRepository.findSimularDimensionsTruck(solution.getTruck().getWidth(),
-        solution.getTruck().getLength())
-      .orElseThrow(() -> new IllegalArgumentException("No truck available"));
-  }
-
-  private boolean isTruckAvailable(Truck truck) {
-    return truck.getStatus().equals(TruckStatus.AVAILABLE);
-  }
-
-  private OrderPallet mapToOrderPallet(PalletBulkDto palletBulkDto, Order order) {
-    OrderPallet orderPallet = new OrderPallet();
-
-    Pallet pallet = palletRepository.findByWidthAndLengthAndHeight(palletBulkDto.getWidth(),
-      palletBulkDto.getLength(), palletBulkDto.getHeight()).orElseGet(() -> {
-      Pallet newPallet = new Pallet();
-      newPallet.setWidth(palletBulkDto.getWidth());
-      newPallet.setLength(palletBulkDto.getLength());
-      newPallet.setHeight(palletBulkDto.getHeight());
-      return palletRepository.save(newPallet);
-    });
-    orderPallet.setPallet(pallet);
-    orderPallet.setOrder(order);
-    orderPallet.setQuantity(palletBulkDto.getQuantity());
-    orderPallet.setWeight(BigDecimal.valueOf(palletBulkDto.getWeight()));
-    return orderPallet;
-  }
-
-  private Driver getAvailableDriver(LocalDateTime deliveryDate, Truck truck) {
-    return null;
-  }
-
-  private void isDateAvailable(LocalDateTime startDate, LocalDateTime endDate, Truck truck) {
-    orderRepository.existsOrderInDateRange(startDate, endDate, truck);
     return packingService.solvePacking(packingType, request);
   }
 
-  private BigDecimal calculateOrderAmount(SolutionDto solution, SolvePackingRequest request,
-    Zone zone) {
-    //    return zone.getFee().multiply(BigDecimal.valueOf(solution.getTruck().getMultiplayer()));
-    if (request.getToAddress().city().equalsIgnoreCase("lima")) {
   public TwoDimensionSolutionResponse scheduleOrder(String packingType, SolvePackingRequest request) {
     return schedulingService.scheduleOrder(packingType, request);
   }
