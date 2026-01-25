@@ -36,7 +36,7 @@ public class Order extends BaseEntity {
   @ManyToOne
   @JoinColumn(name = "zoneId", nullable = false)
   private Zone zone;
-  @OneToMany(cascade = CascadeType.PERSIST)
+  @OneToMany(cascade = CascadeType.PERSIST, mappedBy = "order")
   private List<OrderPallet> orderPallets;
   private LocalDateTime pickupDate;
   private String fromAddress;
@@ -53,7 +53,7 @@ public class Order extends BaseEntity {
   private String solution;
   @Enumerated(EnumType.STRING)
   private OrderStatus orderStatus;
-  @OneToMany
+  @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Bulk> bulkList;
 
   @ManyToOne

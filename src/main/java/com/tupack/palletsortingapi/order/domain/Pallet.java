@@ -1,5 +1,8 @@
 package com.tupack.palletsortingapi.order.domain;
 
+import jakarta.persistence.OneToMany;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,4 +24,8 @@ public class Pallet extends BaseEntity {
   private Double length;
   private Double height;
   private Integer amount;
+
+  @OneToMany(mappedBy = "pallet", orphanRemoval = true)
+  private List<OrderPallet> orderPallets = new ArrayList<>();
+
 }

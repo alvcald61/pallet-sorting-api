@@ -165,7 +165,7 @@ public class OrderService {
 
   private void saveBulks(SolvePackingRequest request, Order finalOrder) {
     List<Bulk> bulkList = request.getPallets().stream().map(
-        pallet -> new Bulk(finalOrder, pallet.getQuantity(), pallet.getVolume(), pallet.getWeight()))
+        pallet -> new Bulk(finalOrder, pallet.getQuantity(), pallet.getVolume(), pallet.getWeight(), pallet.getHeight()))
       .toList();
     bulkRepository.saveAll(bulkList);
     finalOrder.setBulkList(bulkList);
@@ -190,6 +190,7 @@ public class OrderService {
     }
     order.setFromAddress(getAddress(request.getFromAddress()));
     order.setToAddress(getAddress(request.getToAddress()));
+    order.setAddressLink(request.getToAddress().locationLink());
     Warehouse warehouse =
       warehouseRepository.findById(request.getFromAddress().warehouseId()).orElseThrow();
     order.setWarehouse(warehouse);
@@ -408,7 +409,11 @@ public class OrderService {
 
   public ResponseEntity<String> getOrderImage(Long orderId) {
     Order order = orderRepository.getOrderById(orderId).orElseThrow();
-    Path imagePath = Path.of(order.getSolutionImageUrl());
+    String imageUrl = order.getSolutionImageUrl();
+    if(!imageUrl.endsWith(".png")){
+      imageUrl = imageUrl + ".png";
+    }
+    Path imagePath = Path.of(imageUrl);
     try {
       byte[] imageBytes = Files.readAllBytes(imagePath);
       return ResponseEntity.ok().contentType(MediaType.IMAGE_PNG)

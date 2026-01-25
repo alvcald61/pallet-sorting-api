@@ -35,7 +35,7 @@ public class OrderPallet {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
-  @ManyToOne()
+  @ManyToOne
   @JoinColumn(name = "orderId")
   private Order order;
 

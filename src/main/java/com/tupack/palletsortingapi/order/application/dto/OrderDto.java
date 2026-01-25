@@ -39,5 +39,6 @@ public class OrderDto implements Serializable {
   private String toAddressLink;
   private String fromAddressLink;
   private List<DocumentDto> documents;
+  private boolean isDocumentPending = true;
 
 }
