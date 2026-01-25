@@ -2,7 +2,7 @@ package com.tupack.palletsortingapi.user.configuration;
 
 import com.tupack.palletsortingapi.user.infrastructure.outbound.database.UserRepository;
 import java.util.List;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -25,10 +25,16 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableMethodSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
 
   private final JwtAuthenticationFilter jwtAuthFilter;
+  private final boolean permitAll;
+
+  public SecurityConfig(JwtAuthenticationFilter jwtAuthFilter,
+      @Value("${application.security.permit-all:true}") boolean permitAll) {
+    this.jwtAuthFilter = jwtAuthFilter;
+    this.permitAll = permitAll;
+  }
 
   @Bean
   public UserDetailsService userDetailsService(UserRepository userRepository) {
@@ -51,15 +57,13 @@ public class SecurityConfig {
     http.csrf(AbstractHttpConfigurer::disable)
 //            .cors(AbstractHttpConfigurer::disable)
             .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-//                .requestMatchers(
-//                "/api/auth/**",
-//                    "/api/**",
-//                    "/api/order/**",
-//                    "/actuator/health",
-//                            "/actuator/info").permitAll()
-                    .anyRequest()
-                    .permitAll()).authenticationProvider(authProvider)
+            .authorizeHttpRequests(auth -> {
+              if (permitAll) {
+                auth.anyRequest().permitAll();
+              } else {
+                auth.anyRequest().authenticated();
+              }
+            }).authenticationProvider(authProvider)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .httpBasic(Customizer.withDefaults());
     return http.build();
