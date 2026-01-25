@@ -483,26 +483,6 @@ public class OrderService {
   }
 
   public GenericResponse uploadDocument(Long documentId, Long orderId, MultipartFile file) {
-    OrderDocument orderDocument =
-      orderDocumentRepository.getByOrderIdAndDocumentId(orderId, documentId).orElseThrow();
-    String fileName = orderId + "-" + documentId + "-" + file.getOriginalFilename();
-    try {
-      String link = localFileUploader.upload(fileName, file.getBytes());
-      orderDocument.setLink(link);
-      orderDocumentRepository.save(orderDocument);
-      Order order = orderDocument.getOrder();
-      if (order.getDocument().stream().filter(od -> od.getDocument().getRequired())
-        .allMatch(doc -> doc.getLink() != null)) {
-        order.setDocumentPending(false);
-        orderRepository.save(order);
-      }
-      return GenericResponse.success(link);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
-  }
-
-  private void saveOrderStatusUpdate(Order order) {
-    orderStatusUpdateRepository.save(new OrderStatusUpdate(order, order.getOrderStatus()));
+    return documentService.uploadDocument(documentId, orderId, file);
   }
 }
