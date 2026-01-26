@@ -66,35 +66,61 @@ public class OrderSchedulingService {
   public TwoDimensionSolutionResponse scheduleOrder(String packingType,
       SolvePackingRequest request) {
     SolutionDto solution = packingService.solvePacking(packingType, request);
-    Truck truck = solution.getTruck();
     Client client = getClient(request);
     Order order = initializeOrder(packingType, request, client, solution);
+    Truck truck = selectTruck(solution, order);
+    applySolutionToOrder(packingType, solution, order);
+    validateAvailability(request, order, truck);
+    attachDocuments(order);
+    order.setTruck(truck);
+    Order finalOrder = persistOrder(order, packingType, request);
+    assignTruckToOrder(truck, finalOrder);
+    return buildResponse(solution);
+  }
 
+  private Truck selectTruck(SolutionDto solution, Order order) {
+    Truck truck = solution.getTruck();
     if (!isTruckAvailable(truck)) {
       truck = findSimilarDimensionsTruck(solution, order);
     }
+    return truck;
+  }
 
+  private void applySolutionToOrder(String packingType, SolutionDto solution, Order order) {
     if (packingType.equalsIgnoreCase(PackingType.TWO_DIMENSIONAL.name())
         || packingType.equalsIgnoreCase(PackingType.THREE_DIMENSIONAL.name())) {
       order.setSolution(solution.getTruckDistributionUrl());
       order.setSolutionImageUrl(solution.getTruckDistributionImageUrl());
     }
+  }
 
+  private void validateAvailability(SolvePackingRequest request, Order order, Truck truck) {
     isDateAvailable(request.getDeliveryDate(), order.getProjectedDeliveryDate(), truck);
+  }
+
+  private void attachDocuments(Order order) {
     List<OrderDocument> orderDocuments = orderDocumentService.createDocumentOrder(order);
     order.setDocument(orderDocuments);
-    order.setTruck(truck);
+  }
+
+  private Order persistOrder(Order order, String packingType, SolvePackingRequest request) {
     Order finalOrder = orderRepository.save(order);
     orderStatusService.recordStatus(finalOrder);
-
     if (!packingType.equals(PackingType.BULK.getName())) {
       savePallets(request, finalOrder);
     } else {
       saveBulks(request, finalOrder);
     }
+    return finalOrder;
+  }
+
+  private void assignTruckToOrder(Truck truck, Order finalOrder) {
     truck.getOrders().add(finalOrder);
     truck.setStatus(TruckStatus.ASSIGNED);
     truckRepository.save(truck);
+  }
+
+  private TwoDimensionSolutionResponse buildResponse(SolutionDto solution) {
     TwoDimensionSolutionResponse response = new TwoDimensionSolutionResponse();
     response.setImageUrl(solution.getTruckDistributionImageUrl());
     response.setTruck(truckMapper.toDto(solution.getTruck()));

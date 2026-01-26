@@ -27,10 +27,6 @@ public class OrderService {
   private final OrderStatusService statusService;
   private final OrderDocumentService documentService;
 
-  public SolutionDto solvePacking(String packingType, SolvePackingRequest request) {
-    return packingService.solvePacking(packingType, request);
-  }
-
   public TwoDimensionSolutionResponse scheduleOrder(String packingType, SolvePackingRequest request) {
     return schedulingService.scheduleOrder(packingType, request);
   }
