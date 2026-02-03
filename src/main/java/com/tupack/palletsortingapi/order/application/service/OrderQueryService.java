@@ -2,6 +2,10 @@ package com.tupack.palletsortingapi.order.application.service;
 
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.common.dto.PageResponse;
+import com.tupack.palletsortingapi.common.exception.BusinessException;
+import com.tupack.palletsortingapi.common.exception.ClientNotFoundException;
+import com.tupack.palletsortingapi.common.exception.NoRoleAssignedException;
+import com.tupack.palletsortingapi.common.exception.OrderNotFoundException;
 import com.tupack.palletsortingapi.order.application.dto.DocumentDto;
 import com.tupack.palletsortingapi.order.application.dto.OrderDto;
 import com.tupack.palletsortingapi.order.application.dto.OrderStatusUpdateDto;
@@ -85,11 +89,16 @@ public class OrderQueryService {
     User user = getLoggedUser();
     Page<Order> orders;
 
-    orders = switch (client.getUser().getRoles().stream().findFirst().orElseThrow().getName()) {
+    String roleName = client.getUser().getRoles().stream()
+        .findFirst()
+        .orElseThrow(() -> new NoRoleAssignedException(client.getUser().getId()))
+        .getName();
+
+    orders = switch (roleName) {
       case "ADMIN" -> orderRepository.findAll(pageable);
       case "CLIENT" -> orderRepository.getAllByClientId(client.getId(), pageable);
       case "DRIVER" -> orderRepository.getAllByDriverId(user.getId(), pageable);
-      default -> throw new IllegalArgumentException("Invalid role");
+      default -> throw new BusinessException("Invalid role: " + roleName, "INVALID_ROLE");
     };
     GenericResponse response = new GenericResponse();
     response.setPageInfo(getPageInfo(orders));
@@ -98,7 +107,8 @@ public class OrderQueryService {
   }
 
   public GenericResponse getOrderById(Long orderId) {
-    Order order = orderRepository.getOrderById(orderId).orElseThrow();
+    Order order = orderRepository.getOrderById(orderId)
+        .orElseThrow(() -> new OrderNotFoundException(orderId));
     List<PalletBulkDto> palletBulkDtoList;
     if (order.getOrderType().equals(PackingType.BULK)) {
       List<Bulk> bulkList = bulkRepository.findAllByOrder_Id(orderId);
@@ -124,7 +134,8 @@ public class OrderQueryService {
   }
 
   public ResponseEntity<String> getOrderImage(Long orderId) {
-    Order order = orderRepository.getOrderById(orderId).orElseThrow();
+    Order order = orderRepository.getOrderById(orderId)
+        .orElseThrow(() -> new OrderNotFoundException(orderId));
     String imageUrl = order.getSolutionImageUrl();
     if (!imageUrl.endsWith(".png")) {
       imageUrl = imageUrl + ".png";
@@ -135,7 +146,8 @@ public class OrderQueryService {
       return ResponseEntity.ok().contentType(MediaType.TEXT_PLAIN)
           .body(Base64.getEncoder().encodeToString(imageBytes));
     } catch (IOException e) {
-      throw new IllegalArgumentException("Image not found");
+      throw new BusinessException("Order solution image not found at path: " + imageUrl,
+          "IMAGE_NOT_FOUND");
     }
   }
 
@@ -157,7 +169,8 @@ public class OrderQueryService {
   private Client getLoggedInClient() {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     User user = (User) securityContext.getAuthentication().getPrincipal();
-    return clientRepository.findClientByUserId(user.getId()).orElseThrow();
+    return clientRepository.findClientByUserId(user.getId())
+        .orElseThrow(() -> new ClientNotFoundException("userId", user.getId()));
   }
 
   private PageResponse getPageInfo(Page<Order> orders) {

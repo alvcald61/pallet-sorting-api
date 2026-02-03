@@ -1,6 +1,8 @@
 package com.tupack.palletsortingapi.order.application;
 
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
+import com.tupack.palletsortingapi.common.exception.DriverNotFoundException;
+import com.tupack.palletsortingapi.common.exception.TruckNotFoundException;
 import com.tupack.palletsortingapi.order.application.dto.TruckDto;
 import com.tupack.palletsortingapi.order.application.mapper.TruckMapper;
 import com.tupack.palletsortingapi.order.domain.Truck;
@@ -32,11 +34,12 @@ public class TruckService {
   public GenericResponse getTruckById(Long id) {
     var truck = truckRepository.findById(id).map(truckMapper::toDto);
     return truck.map(GenericResponse::success)
-        .orElseThrow();
+        .orElseThrow(() -> new TruckNotFoundException(id));
   }
 
   public GenericResponse createTruck(TruckDto truckDTO) {
-    Driver driver = driverRepository.findById(truckDTO.getDriverId()).orElseThrow();
+    Driver driver = driverRepository.findById(truckDTO.getDriverId())
+        .orElseThrow(() -> new DriverNotFoundException(truckDTO.getDriverId()));
     Truck truck = truckMapper.toEntity(truckDTO);
     truck.setDriver(driver);
     truck.setEnabled(true);
@@ -50,12 +53,13 @@ public class TruckService {
       updateDriver(truck, truckDTO.getDriverId());
       Truck updated = truckRepository.save(truck);
       return GenericResponse.success(truckMapper.toDto(updated));
-    }).orElseThrow();
+    }).orElseThrow(() -> new TruckNotFoundException(id));
   }
 
   private void updateDriver(Truck truck, Long driverId) {
     if(truck.getDriver() == null || !truck.getDriver().getDriverId().equals(driverId)) {
-      Driver driver = driverRepository.findById(driverId).orElseThrow();
+      Driver driver = driverRepository.findById(driverId)
+          .orElseThrow(() -> new DriverNotFoundException(driverId));
       truck.setDriver(driver);
     }
   }
@@ -65,6 +69,6 @@ public class TruckService {
       truck.setEnabled(false);
       truckRepository.save(truck);
       return GenericResponse.success("Truck deleted successfully");
-    }).orElseThrow();
+    }).orElseThrow(() -> new TruckNotFoundException(id));
   }
 }

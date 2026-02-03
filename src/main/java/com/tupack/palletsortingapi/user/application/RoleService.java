@@ -1,6 +1,7 @@
 package com.tupack.palletsortingapi.user.application;
 
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
+import com.tupack.palletsortingapi.common.exception.RoleNotFoundException;
 import com.tupack.palletsortingapi.user.application.dto.CreateRoleRequest;
 import com.tupack.palletsortingapi.user.application.dto.RoleDto;
 import com.tupack.palletsortingapi.user.application.mapper.RoleMapper;
@@ -36,7 +37,7 @@ public class RoleService {
         .filter(Role::isEnabled)
         .map(roleMapper::toDto);
     return role.map(GenericResponse::success)
-        .orElseThrow();
+        .orElseThrow(() -> new RoleNotFoundException(id));
   }
 
   /**
@@ -47,7 +48,7 @@ public class RoleService {
         .filter(Role::isEnabled)
         .map(roleMapper::toDto);
     return role.map(GenericResponse::success)
-        .orElseThrow();
+        .orElseThrow(() -> new RoleNotFoundException("Role not found with name: " + name));
   }
 
   /**
@@ -91,7 +92,7 @@ public class RoleService {
           Role updated = roleRepository.save(role);
           return GenericResponse.success(roleMapper.toDto(updated));
         })
-        .orElseThrow();
+        .orElseThrow(() -> new RoleNotFoundException(id));
   }
 
   /**
@@ -105,7 +106,7 @@ public class RoleService {
           roleRepository.save(role);
           return GenericResponse.success("Rol eliminado exitosamente");
         })
-        .orElseThrow();
+        .orElseThrow(() -> new RoleNotFoundException(id));
   }
 }
 

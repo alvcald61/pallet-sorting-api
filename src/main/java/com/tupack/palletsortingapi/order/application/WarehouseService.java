@@ -1,6 +1,7 @@
 package com.tupack.palletsortingapi.order.application;
 
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
+import com.tupack.palletsortingapi.common.exception.WarehouseNotFoundException;
 import com.tupack.palletsortingapi.order.application.mapper.WarehouseMapper;
 import com.tupack.palletsortingapi.order.domain.Warehouse;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.WarehouseRepository;
@@ -28,7 +29,7 @@ public class WarehouseService {
   @Transactional(readOnly = true)
   public GenericResponse getWarehouseById(Long id) {
     var warehouse = warehouseRepository.findById(id).map(warehouseMapper::toDto)
-        .orElseThrow(); // puedes cambiar a una excepción custom si ya manejas 404
+        .orElseThrow(() -> new WarehouseNotFoundException(id));
     return GenericResponse.success(warehouse);
   }
 
@@ -48,12 +49,12 @@ public class WarehouseService {
 
       Warehouse updated = warehouseRepository.save(existing);
       return GenericResponse.success(warehouseMapper.toDto(updated));
-    }).orElseThrow();
+    }).orElseThrow(() -> new WarehouseNotFoundException(id));
   }
 
   public GenericResponse deleteWarehouse(Long id) {
     if (!warehouseRepository.existsById(id)) {
-      throw new IllegalArgumentException("Warehouse not found");
+      throw new WarehouseNotFoundException(id);
     }
     warehouseRepository.deleteById(id);
     return GenericResponse.success("Warehouse deleted successfully");

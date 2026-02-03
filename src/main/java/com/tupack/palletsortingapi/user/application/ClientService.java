@@ -1,6 +1,8 @@
 package com.tupack.palletsortingapi.user.application;
 
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
+import com.tupack.palletsortingapi.common.exception.ClientNotFoundException;
+import com.tupack.palletsortingapi.common.exception.RoleNotFoundException;
 import com.tupack.palletsortingapi.user.application.dto.ClientDto;
 import com.tupack.palletsortingapi.user.application.dto.CreateClientRequest;
 import com.tupack.palletsortingapi.user.application.mapper.ClientMapper;
@@ -41,7 +43,8 @@ public class ClientService {
    */
   public GenericResponse getClientById(Long id) {
     var client = clientRepository.findById(id).filter(Client::isEnabled).map(clientMapper::toDto);
-    return client.map(GenericResponse::success).orElseThrow();
+    return client.map(GenericResponse::success)
+        .orElseThrow(() -> new ClientNotFoundException(id));
   }
 
   /**
@@ -107,7 +110,7 @@ public class ClientService {
       Client updated = clientRepository.save(client);
 
       return GenericResponse.success(clientMapper.toDto(updated));
-    }).orElseThrow();
+    }).orElseThrow(() -> new ClientNotFoundException(id));
   }
 
   /**
@@ -119,16 +122,16 @@ public class ClientService {
       client.setEnabled(false);
       clientRepository.save(client);
       return GenericResponse.success("Cliente eliminado exitosamente");
-    }).orElseThrow();
+    }).orElseThrow(() -> new ClientNotFoundException(id));
   }
 
   /**
    * Helper method to resolve roles
    */
   private Set<Role> resolveRoles(List<Long> roleNames) {
-    return roleNames.stream().map(id -> roleRepository.findById(id).orElseThrow()
-        //            .orElseGet(() -> roleRepository.save(Role.builder().name(name).build()))
-
-    ).collect(Collectors.toSet());
+    return roleNames.stream()
+        .map(id -> roleRepository.findById(id)
+            .orElseThrow(() -> new RoleNotFoundException(id)))
+        .collect(Collectors.toSet());
   }
 }

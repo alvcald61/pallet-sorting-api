@@ -1,5 +1,10 @@
 package com.tupack.palletsortingapi.order.application.service;
 
+import com.tupack.palletsortingapi.common.exception.BusinessException;
+import com.tupack.palletsortingapi.common.exception.ClientNotFoundException;
+import com.tupack.palletsortingapi.common.exception.NoTruckAvailableException;
+import com.tupack.palletsortingapi.common.exception.WarehouseNotFoundException;
+import com.tupack.palletsortingapi.common.exception.ZoneNotFoundException;
 import com.tupack.palletsortingapi.order.application.dto.AddressDto;
 import com.tupack.palletsortingapi.order.application.dto.PalletBulkDto;
 import com.tupack.palletsortingapi.order.application.dto.SolutionDto;
@@ -156,8 +161,8 @@ public class OrderSchedulingService {
     order.setFromAddress(getAddress(request.getFromAddress()));
     order.setToAddress(getAddress(request.getToAddress()));
     order.setAddressLink(request.getToAddress().locationLink());
-    Warehouse warehouse =
-        warehouseRepository.findById(request.getFromAddress().warehouseId()).orElseThrow();
+    Warehouse warehouse = warehouseRepository.findById(request.getFromAddress().warehouseId())
+        .orElseThrow(() -> new WarehouseNotFoundException(request.getFromAddress().warehouseId()));
     order.setWarehouse(warehouse);
     order.setProjectedDeliveryDate(
         request.getDeliveryDate().plusMinutes(zone.getMaxDeliveryTime()));
@@ -177,7 +182,8 @@ public class OrderSchedulingService {
   }
 
   private Client getUserIdClient(String userId) {
-    return clientRepository.findClientByUserId(Long.valueOf(userId)).orElseThrow();
+    return clientRepository.findClientByUserId(Long.valueOf(userId))
+        .orElseThrow(() -> new ClientNotFoundException("userId", Long.valueOf(userId)));
   }
 
   private String getAddress(AddressDto fromAddressDto) {
@@ -189,15 +195,16 @@ public class OrderSchedulingService {
     AddressDto toAddress = request.getToAddress();
     List<Zone> stateZone = zoneMap.get(toAddress.state().toLowerCase());
     if (stateZone == null || stateZone.isEmpty()) {
-      throw new IllegalArgumentException("No zone found for the given state: " + toAddress.state());
+      throw new ZoneNotFoundException("No zone found for state: " + toAddress.state());
     }
     List<Zone> cityZone =
         stateZone.stream().filter(zone -> zone.getCity().equalsIgnoreCase(toAddress.city()))
             .toList();
     return cityZone.stream().filter(zone -> hasDistrict(zone, toAddress)).findFirst().orElseGet(
         () -> cityZone.stream().filter(zone -> zone.getDistrict().equalsIgnoreCase("*")).findFirst()
-            .orElseThrow(() -> new IllegalArgumentException(
-                "No zone found for the given district: " + toAddress.district())));
+            .orElseThrow(() -> new ZoneNotFoundException(
+                "No zone found for district: " + toAddress.district() + " in city: " + toAddress
+                    .city())));
   }
 
   private boolean hasDistrict(Zone zone, AddressDto toAddress) {
@@ -213,7 +220,7 @@ public class OrderSchedulingService {
   private Truck findSimilarDimensionsTruck(SolutionDto solution, Order order) {
     return truckRepository.findSimularDimensionsTruck(solution.getTruck().getWidth(),
             solution.getTruck().getLength())
-        .orElseThrow(() -> new IllegalArgumentException("No truck available"));
+        .orElseThrow(() -> new NoTruckAvailableException(order.getPickupDate()));
   }
 
   private boolean isTruckAvailable(Truck truck) {
@@ -247,10 +254,15 @@ public class OrderSchedulingService {
     if (request.getToAddress().city().equalsIgnoreCase("lima")) {
       Zone requestZone =
           zoneRepository.findZoneByDistrictContainingIgnoreCase(request.getToAddress().district())
-              .orElseThrow();
+              .orElseThrow(() -> new ZoneNotFoundException(
+                  "No zone found for district: " + request.getToAddress().district()));
       PriceCondition matchCondition =
           priceConditionRepository.findByVolumeAndWeight(request.getTotalVolume(),
-              request.getTotalWeight()).orElseThrow();
+                  request.getTotalWeight())
+              .orElseThrow(() -> new BusinessException(
+                  String.format("No price condition found for volume: %.2f and weight: %.2f",
+                      request.getTotalVolume(), request.getTotalWeight()),
+                  "PRICE_CONDITION_NOT_FOUND"));
       Price price = priceRepository.findByZoneAndPriceCondition(requestZone, matchCondition);
       return price.getPrice();
     }
@@ -260,6 +272,7 @@ public class OrderSchedulingService {
   private Client getLoggedInClient() {
     SecurityContext securityContext = SecurityContextHolder.getContext();
     User user = (User) securityContext.getAuthentication().getPrincipal();
-    return clientRepository.findClientByUserId(user.getId()).orElseThrow();
+    return clientRepository.findClientByUserId(user.getId())
+        .orElseThrow(() -> new ClientNotFoundException("userId", user.getId()));
   }
 }

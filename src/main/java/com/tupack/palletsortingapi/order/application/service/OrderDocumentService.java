@@ -1,6 +1,8 @@
 package com.tupack.palletsortingapi.order.application.service;
 
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
+import com.tupack.palletsortingapi.common.exception.BusinessException;
+import com.tupack.palletsortingapi.common.exception.OrderDocumentNotFoundException;
 import com.tupack.palletsortingapi.order.domain.Order;
 import com.tupack.palletsortingapi.order.domain.OrderDocument;
 import com.tupack.palletsortingapi.order.domain.id.OrderDocumentId;
@@ -29,7 +31,8 @@ public class OrderDocumentService {
 
   public GenericResponse uploadDocument(Long documentId, Long orderId, MultipartFile file) {
     OrderDocument orderDocument =
-        orderDocumentRepository.getByOrderIdAndDocumentId(orderId, documentId).orElseThrow();
+        orderDocumentRepository.getByOrderIdAndDocumentId(orderId, documentId)
+            .orElseThrow(() -> new OrderDocumentNotFoundException(orderId, documentId));
     String fileName = orderId + "-" + documentId + "-" + file.getOriginalFilename();
     try {
       String link = localFileUploader.upload(fileName, file.getBytes());
@@ -43,7 +46,8 @@ public class OrderDocumentService {
       }
       return GenericResponse.success(link);
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new BusinessException("Failed to upload document: " + e.getMessage(),
+          "DOCUMENT_UPLOAD_FAILED");
     }
   }
 }

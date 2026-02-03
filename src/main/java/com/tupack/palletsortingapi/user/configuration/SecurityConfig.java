@@ -1,5 +1,6 @@
 package com.tupack.palletsortingapi.user.configuration;
 
+import com.tupack.palletsortingapi.common.exception.UserNotFoundException;
 import com.tupack.palletsortingapi.user.infrastructure.outbound.database.UserRepository;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,7 +40,7 @@ public class SecurityConfig {
   @Bean
   public UserDetailsService userDetailsService(UserRepository userRepository) {
     return username -> userRepository.findByEmail(username)
-            .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            .orElseThrow(() -> new UserNotFoundException("email", username));
   }
 
   @Bean

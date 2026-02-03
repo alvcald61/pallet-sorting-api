@@ -1,5 +1,8 @@
 package com.tupack.palletsortingapi.user.application.impl;
 
+import com.tupack.palletsortingapi.common.exception.BusinessException;
+import com.tupack.palletsortingapi.common.exception.InvalidCredentialsException;
+import com.tupack.palletsortingapi.common.exception.InvalidTokenException;
 import com.tupack.palletsortingapi.user.domain.Role;
 import com.tupack.palletsortingapi.user.domain.User;
 import com.tupack.palletsortingapi.user.infrastructure.outbound.database.RoleRepository;
@@ -38,7 +41,8 @@ public class AuthServiceImpl implements AuthService {
   @Override
   public AuthResponse register(RegisterRequest request) {
     if (userRepository.existsByEmail(request.getEmail())) {
-      throw new IllegalArgumentException("El email ya está registrado");
+      throw new BusinessException("Email is already registered: " + request.getEmail(),
+          "EMAIL_ALREADY_EXISTS");
     }
 
     Set<Role> roles = resolveRoles(request.getRoles());
@@ -57,7 +61,7 @@ public class AuthServiceImpl implements AuthService {
     authManager.authenticate(authToken);
 
     User user = userRepository.findByEmail(request.getEmail().toLowerCase())
-            .orElseThrow(() -> new IllegalArgumentException("Credenciales inválidas"));
+            .orElseThrow(InvalidCredentialsException::new);
     return buildTokensFor(user);
   }
 
@@ -65,9 +69,9 @@ public class AuthServiceImpl implements AuthService {
   public AuthResponse refresh(String refreshToken) {
     String email = jwtService.extractSubject(refreshToken);
     User user = userRepository.findByEmail(email)
-            .orElseThrow(() -> new IllegalArgumentException("Token inválido"));
+            .orElseThrow(InvalidTokenException::new);
     if (jwtService.isExpired(refreshToken)) {
-      throw new IllegalArgumentException("Refresh token expirado");
+      throw new InvalidTokenException("Refresh token has expired");
     }
     String accessToken = jwtService.generateAccessToken(user.getEmail(), defaultClaims(user));
     return AuthResponse.builder().accessToken(accessToken).refreshToken(refreshToken) // reuso

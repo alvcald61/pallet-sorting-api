@@ -1,6 +1,7 @@
 package com.tupack.palletsortingapi.order.application;
 
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
+import com.tupack.palletsortingapi.common.exception.ZoneNotFoundException;
 import com.tupack.palletsortingapi.order.application.dto.PriceDto;
 import com.tupack.palletsortingapi.order.application.mapper.PriceConditionDtoMapper;
 import com.tupack.palletsortingapi.order.application.mapper.PriceDtoMapper;
@@ -23,15 +24,15 @@ public class PriceService {
   private final PriceDtoMapper priceDtoMapper;
   private final PriceRepository priceRepository;
 
-  public GenericResponse createPrice(PriceDto priceDto) {
+  public GenericResponse createPrice(final PriceDto priceDto) {
     PriceCondition priceCondition = priceConditionDtoMapper.toEntity(priceDto.getPriceCondition());
     priceCondition = priceConditionRepository.save(priceCondition);
-    Zone zone = zoneRepository.findById(priceDto.getZone().getId()).orElseThrow();
+    Zone zone = zoneRepository.findById(priceDto.getZone().getId())
+        .orElseThrow(() -> new ZoneNotFoundException(priceDto.getZone().getId()));
     Price price = priceDtoMapper.toEntity(priceDto);
     price.setPriceCondition(priceCondition);
     price.setZone(zone);
     price = priceRepository.save(price);
-    priceDto = priceDtoMapper.toDto(price);
-    return GenericResponse.success(priceDto);
+    return GenericResponse.success( priceDtoMapper.toDto(price));
   }
 }

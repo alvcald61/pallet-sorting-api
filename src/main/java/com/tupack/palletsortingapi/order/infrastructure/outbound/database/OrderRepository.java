@@ -10,11 +10,17 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface OrderRepository extends JpaRepository<Order, Long> {
   @Query(value = "SELECT count (o) > 0 from Order o "
           + "where (o.pickupDate not between ?1 and ?2) and (o.projectedDeliveryDate not between ?1 and ?2)")
   Boolean existsOrderInDateRange(LocalDateTime startDate, LocalDateTime endDate, Truck truck);
+
+  @Query("select count(o) > 0 from Order o where o.truck = :truck "
+      + "and o.pickupDate <= :endDate and o.projectedDeliveryDate >= :startDate")
+  Boolean existsOverlappingOrder(@Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate, @Param("truck") Truck truck);
 
 	@Query(value = "SELECT o.pickupDate from Order o "
 			+ "where o.pickupDate between ?1 and ?2")

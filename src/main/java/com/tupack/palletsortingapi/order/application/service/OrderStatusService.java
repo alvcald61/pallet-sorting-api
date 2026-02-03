@@ -1,6 +1,8 @@
 package com.tupack.palletsortingapi.order.application.service;
 
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
+import com.tupack.palletsortingapi.common.exception.InvalidOrderStateException;
+import com.tupack.palletsortingapi.common.exception.OrderNotFoundException;
 import com.tupack.palletsortingapi.order.domain.Order;
 import com.tupack.palletsortingapi.order.domain.OrderStatusUpdate;
 import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
@@ -19,10 +21,11 @@ public class OrderStatusService {
 
   public GenericResponse updateOrderStatus(Long orderId, String status) {
     OrderStatus statusEnum = OrderStatus.valueOf(status);
-    Order order = orderRepository.getOrderById(orderId).orElseThrow();
+    Order order = orderRepository.getOrderById(orderId)
+        .orElseThrow(() -> new OrderNotFoundException(orderId));
     if (order.getOrderStatus().equals(OrderStatus.DELIVERED) || order.getOrderStatus()
         .equals(OrderStatus.DENIED)) {
-      throw new IllegalArgumentException("Order status cannot be updated");
+      throw new InvalidOrderStateException(order.getOrderStatus());
     }
     order.setOrderStatus(statusEnum);
     orderRepository.save(order);
@@ -32,7 +35,8 @@ public class OrderStatusService {
 
   public GenericResponse continueOrder(Long orderId, BigDecimal amount, String gpsLink,
       boolean denied) {
-    Order order = orderRepository.getOrderById(orderId).orElseThrow();
+    Order order = orderRepository.getOrderById(orderId)
+        .orElseThrow(() -> new OrderNotFoundException(orderId));
     OrderStatus previousStatus = order.getOrderStatus();
     switch (order.getOrderStatus()) {
       case REVIEW, PRE_APPROVED:
@@ -51,13 +55,15 @@ public class OrderStatusService {
         break;
       case DOCUMENT_PENDING:
         if (order.isDocumentPending()) {
-          throw new IllegalArgumentException("Documents pending");
+          throw new InvalidOrderStateException("Cannot continue order: documents are still pending");
         }
         order.setOrderStatus(OrderStatus.IN_PROGRESS);
-        order.setGpsLink(gpsLink);
+        if (gpsLink != null) {
+          order.setGpsLink(gpsLink);
+        }
         break;
       default:
-        throw new IllegalArgumentException("Order cannot be continued");
+        throw new InvalidOrderStateException(order.getOrderStatus());
     }
     if (denied) {
       order.setOrderStatus(OrderStatus.DENIED);

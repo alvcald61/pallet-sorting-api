@@ -1,6 +1,8 @@
 package com.tupack.palletsortingapi.user.application;
 
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
+import com.tupack.palletsortingapi.common.exception.DriverNotFoundException;
+import com.tupack.palletsortingapi.common.exception.RoleNotFoundException;
 import com.tupack.palletsortingapi.user.application.dto.CreateDriverRequest;
 import com.tupack.palletsortingapi.user.application.mapper.DriverMapper;
 import com.tupack.palletsortingapi.user.domain.Driver;
@@ -40,7 +42,8 @@ public class DriverService {
    */
   public GenericResponse getDriverById(Long id) {
     var driver = driverRepository.findById(id).filter(Driver::isEnabled).map(driverMapper::toDto);
-    return driver.map(GenericResponse::success).orElseThrow();
+    return driver.map(GenericResponse::success)
+        .orElseThrow(() -> new DriverNotFoundException(id));
   }
 
   /**
@@ -106,7 +109,7 @@ public class DriverService {
       Driver updated = driverRepository.save(driver);
 
       return GenericResponse.success(driverMapper.toDto(updated));
-    }).orElseThrow();
+    }).orElseThrow(() -> new DriverNotFoundException(id));
   }
 
   /**
@@ -118,7 +121,7 @@ public class DriverService {
       driver.setEnabled(false);
       driverRepository.save(driver);
       return GenericResponse.success("Conductor eliminado exitosamente");
-    }).orElseThrow();
+    }).orElseThrow(() -> new DriverNotFoundException(id));
   }
 
   /**
@@ -128,7 +131,9 @@ public class DriverService {
     if (roleIds == null || roleIds.isEmpty()) {
       return Set.of();
     }
-    return roleIds.stream().map(id -> roleRepository.findById(id).orElseThrow())
+    return roleIds.stream()
+        .map(id -> roleRepository.findById(id)
+            .orElseThrow(() -> new RoleNotFoundException(id)))
         .collect(Collectors.toSet());
   }
 }

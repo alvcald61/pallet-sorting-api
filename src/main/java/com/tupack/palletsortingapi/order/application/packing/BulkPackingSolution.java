@@ -1,5 +1,6 @@
 package com.tupack.palletsortingapi.order.application.packing;
 
+import com.tupack.palletsortingapi.common.exception.NoTruckAvailableException;
 import com.tupack.palletsortingapi.order.application.dto.PalletBulkDto;
 import com.tupack.palletsortingapi.order.domain.Truck;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.TruckRepository;
@@ -20,7 +21,10 @@ public class BulkPackingSolution implements Strategy {
         .mapToDouble(pallet -> pallet.getWeight() * pallet.getQuantity()).sum();
     Double maxHeight = request.getPallets().stream()
         .mapToDouble(PalletBulkDto::getHeight).max().orElse(0.0);
-    Truck truck = truckRepository.findOneByVolume(totalVolume, totalWeight, maxHeight).orElseThrow();
+    Truck truck = truckRepository.findOneByVolume(totalVolume, totalWeight, maxHeight)
+        .orElseThrow(() -> new NoTruckAvailableException(
+            String.format("No truck available for volume: %.2f, weight: %.2f, height: %.2f",
+                totalVolume, totalWeight, maxHeight)));
     return SolutionDto.builder().truckId(truck.getId()).truck(truck).build();
 
   }

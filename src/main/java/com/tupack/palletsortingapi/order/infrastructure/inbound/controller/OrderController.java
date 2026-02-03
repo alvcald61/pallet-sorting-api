@@ -73,7 +73,7 @@ public class OrderController {
   @PutMapping("/{orderId}/continue")
   public ResponseEntity<GenericResponse> processOrderContinuation(@PathVariable Long orderId,
       @RequestParam(required = false) BigDecimal amount,
-      @RequestParam(required = false) String gpsLink, @RequestParam boolean denied) {
+      @RequestParam(required = false) String gpsLink, @RequestParam(required = false) boolean denied) {
     return ResponseEntity.ok(orderService.continueOrder(orderId, amount, gpsLink, denied));
   }
 

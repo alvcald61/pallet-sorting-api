@@ -14,6 +14,7 @@ public class SolvePackingRequest {
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm")
   @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
   private LocalDateTime deliveryDate;
+    private LocalDateTime endDate;
   //  private String address;
   private String city;
   private String street;
