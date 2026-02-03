@@ -1,6 +1,7 @@
 package com.tupack.palletsortingapi.order.domain;
 
 import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
+import com.tupack.palletsortingapi.order.domain.emuns.TransportStatus;
 import com.tupack.palletsortingapi.user.domain.Client;
 import com.tupack.palletsortingapi.utils.PackingType;
 import jakarta.persistence.EnumType;
@@ -53,6 +54,11 @@ public class Order extends BaseEntity {
   private String solution;
   @Enumerated(EnumType.STRING)
   private OrderStatus orderStatus;
+
+  @Enumerated(EnumType.STRING)
+  @Column(name = "transport_status")
+  private TransportStatus transportStatus;
+
   @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<Bulk> bulkList;
 
