@@ -62,7 +62,13 @@ public class SecurityConfig {
               if (permitAll) {
                 auth.anyRequest().permitAll();
               } else {
-                auth.anyRequest().authenticated();
+                auth.requestMatchers(
+                    "/api/auth/**",
+                    "/v3/api-docs/**",
+                    "/swagger-ui/**",
+                    "/swagger-ui.html"
+                ).permitAll()
+                .anyRequest().authenticated();
               }
             }).authenticationProvider(authProvider)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
@@ -82,12 +88,13 @@ public class SecurityConfig {
   }
 
   @Bean
-  UrlBasedCorsConfigurationSource corsConfigurationSource() {
+  UrlBasedCorsConfigurationSource corsConfigurationSource(
+      @Value("${application.security.cors.allowed-origins:http://localhost:3000}") String[] allowedOrigins) {
     CorsConfiguration configuration = new CorsConfiguration();
-    configuration.setAllowedOrigins(List.of("*", "http://localhost:3000"));
-    configuration.setAllowedMethods(List.of("*"));
-    configuration.setAllowedHeaders(List.of("*"));
-    configuration.setAllowedOriginPatterns(List.of("*"));
+    configuration.setAllowedOrigins(List.of(allowedOrigins));
+    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+    configuration.setAllowedHeaders(List.of("Authorization", "Content-Type"));
+    configuration.setAllowCredentials(true);
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", configuration);
     return source;

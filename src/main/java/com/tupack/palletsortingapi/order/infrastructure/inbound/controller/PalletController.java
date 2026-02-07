@@ -55,7 +55,7 @@ public class PalletController {
    * @return GenericResponse with created pallet
    */
   @PostMapping
-//  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<GenericResponse> createPallet(@RequestBody CreatePalletRequest request) {
     GenericResponse response = palletService.createPallet(request);
       return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -69,7 +69,7 @@ public class PalletController {
    * @return GenericResponse with updated pallet
    */
   @PutMapping("/{id}")
-//  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<GenericResponse> updatePallet(@PathVariable Long id,
       @RequestBody CreatePalletRequest request) {
     GenericResponse response = palletService.updatePallet(id, request);
@@ -83,7 +83,7 @@ public class PalletController {
    * @return GenericResponse with success message
    */
   @DeleteMapping("/{id}")
-//  @PreAuthorize("hasRole('ADMIN')")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<GenericResponse> deletePallet(@PathVariable Long id) {
     GenericResponse response = palletService.deletePallet(id);
       return ResponseEntity.ok(response);

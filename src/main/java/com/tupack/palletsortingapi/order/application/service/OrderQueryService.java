@@ -21,7 +21,7 @@ import com.tupack.palletsortingapi.order.domain.OrderPallet;
 import com.tupack.palletsortingapi.order.domain.OrderStatusUpdate;
 import com.tupack.palletsortingapi.order.domain.Truck;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.BulkRepository;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderPallerRepotisoty;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderPalletRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderStatusUpdateRepository;
 import com.tupack.palletsortingapi.user.application.mapper.DriverMapper;
@@ -58,7 +58,7 @@ public class OrderQueryService {
 
   private final OrderRepository orderRepository;
   private final BulkRepository bulkRepository;
-  private final OrderPallerRepotisoty orderPalletRepository;
+  private final OrderPalletRepository orderPalletRepository;
   private final OrderStatusUpdateRepository orderStatusUpdateRepository;
   private final OrderStatusUpdateMapper orderStatusUpdateMapper;
   private final OrderMapper orderMapper;

@@ -1,9 +1,12 @@
 package com.tupack.palletsortingapi.order.domain.emuns;
 
+import lombok.Getter;
+
 /**
  * Transport-specific status for tracking the physical movement and handling of cargo.
  * This provides granular tracking of the transport operation lifecycle.
  */
+@Getter
 public enum TransportStatus {
   PENDING("Pendiente", "Transport not yet started"),
   TRUCK_ASSIGNED("Camión Asignado", "Truck has been assigned to the order"),
@@ -25,15 +28,7 @@ public enum TransportStatus {
     this.description = description;
   }
 
-  public String getDisplayName() {
-    return displayName;
-  }
-
-  public String getDescription() {
-    return description;
-  }
-
-  /**
+    /**
    * Check if this status represents a terminal state (no more transitions possible)
    */
   public boolean isTerminal() {

@@ -62,6 +62,11 @@ public class OrderStatusService {
           order.setGpsLink(gpsLink);
         }
         break;
+      case IN_PROGRESS:
+        if (gpsLink != null) {
+          order.setGpsLink(gpsLink);
+        }
+        break;
       default:
         throw new InvalidOrderStateException(order.getOrderStatus());
     }

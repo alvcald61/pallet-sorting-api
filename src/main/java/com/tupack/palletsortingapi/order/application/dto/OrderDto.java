@@ -1,5 +1,6 @@
 package com.tupack.palletsortingapi.order.application.dto;
 
+import com.tupack.palletsortingapi.order.domain.emuns.TransportStatus;
 import com.tupack.palletsortingapi.user.application.dto.DriverDto;
 import com.tupack.palletsortingapi.user.domain.Driver;
 import com.tupack.palletsortingapi.utils.PackingType;
@@ -40,5 +41,6 @@ public class OrderDto implements Serializable {
   private String fromAddressLink;
   private List<DocumentDto> documents;
   private boolean isDocumentPending = true;
+  private String transportStatus;
 
 }

@@ -5,6 +5,7 @@ import com.tupack.palletsortingapi.common.exception.BusinessException;
 import com.tupack.palletsortingapi.common.exception.OrderDocumentNotFoundException;
 import com.tupack.palletsortingapi.order.domain.Order;
 import com.tupack.palletsortingapi.order.domain.OrderDocument;
+import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
 import com.tupack.palletsortingapi.order.domain.id.OrderDocumentId;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderDocumentRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderRepository;
@@ -42,6 +43,7 @@ public class OrderDocumentService {
       if (order.getDocument().stream().filter(od -> od.getDocument().getRequired())
           .allMatch(doc -> doc.getLink() != null)) {
         order.setDocumentPending(false);
+        order.setOrderStatus(OrderStatus.IN_PROGRESS);
         orderRepository.save(order);
       }
       return GenericResponse.success(link);

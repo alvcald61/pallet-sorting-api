@@ -7,7 +7,7 @@ import com.tupack.palletsortingapi.order.application.dto.TwoDimensionSolutionRes
 import com.tupack.palletsortingapi.order.application.service.OrderDocumentService;
 import com.tupack.palletsortingapi.order.application.service.OrderPackingService;
 import com.tupack.palletsortingapi.order.application.service.OrderQueryService;
-import com.tupack.palletsortingapi.order.application.service.OrderSchedulingService;
+import com.tupack.palletsortingapi.order.application.service.OrderSchedulingServiceRefactored;
 import com.tupack.palletsortingapi.order.application.service.OrderStatusService;
 import java.math.BigDecimal;
 import java.util.List;
@@ -22,7 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class OrderService {
 
   private final OrderPackingService packingService;
-  private final OrderSchedulingService schedulingService;
+  private final OrderSchedulingServiceRefactored schedulingService;
   private final OrderQueryService queryService;
   private final OrderStatusService statusService;
   private final OrderDocumentService documentService;

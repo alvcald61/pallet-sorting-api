@@ -3,6 +3,7 @@ package com.tupack.palletsortingapi.order.application.mapper;
 import com.tupack.palletsortingapi.order.application.dto.OrderDto;
 import com.tupack.palletsortingapi.order.domain.Order;
 import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
+import com.tupack.palletsortingapi.order.domain.emuns.TransportStatus;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.EnumMapping;
 import org.mapstruct.Mapper;
@@ -18,9 +19,9 @@ public interface OrderMapper {
   Order toEntity(OrderDto orderDto);
 
   @Mapping(source = "orderStatus", target = "orderStatus")
+  @Mapping(source = "transportStatus", target = "transportStatus")
   @Mapping(source = "addressLink", target = "toAddressLink")
   @Mapping(source = "warehouse.locationLink", target = "fromAddressLink")
-  @EnumMapping(nameTransformationStrategy = MappingConstants.CASE_TRANSFORMATION, configuration = "lower")
   OrderDto toDto(Order order);
 
 
@@ -30,5 +31,9 @@ public interface OrderMapper {
 
   default String mapOrderStatus(OrderStatus orderStatus) {
     return orderStatus != null ? orderStatus.getState() : null;
+  }
+
+  default String mapTransportStatus(TransportStatus transportStatus) {
+    return transportStatus != null ? transportStatus.name() : null;
   }
 }

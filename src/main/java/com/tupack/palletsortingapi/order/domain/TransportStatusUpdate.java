@@ -1,6 +1,5 @@
 package com.tupack.palletsortingapi.order.domain;
 
-import com.tupack.palletsortingapi.common.BaseEntity;
 import com.tupack.palletsortingapi.order.domain.emuns.TransportStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -31,7 +30,7 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TransportStatusUpdate extends BaseEntity {
+public class TransportStatusUpdate {
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
