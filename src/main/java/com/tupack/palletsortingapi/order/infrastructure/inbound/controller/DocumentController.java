@@ -4,6 +4,7 @@ import com.tupack.palletsortingapi.order.application.DocumentService;
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.order.domain.Document;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/document")
 @RequiredArgsConstructor
+@Slf4j
 @CrossOrigin(origins = "*")
 public class DocumentController {
 

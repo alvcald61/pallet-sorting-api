@@ -2,7 +2,7 @@ package com.tupack.palletsortingapi.utils;
 
 import com.tupack.palletsortingapi.order.application.dto.AddressDto;
 import com.tupack.palletsortingapi.order.domain.Zone;
-import com.tupack.palletsortingapi.order.infrastructure.inbound.controller.ZoneDto;
+import com.tupack.palletsortingapi.order.application.dto.ZoneDto;
 
 public class AppUtils {
 

@@ -9,9 +9,11 @@ import com.tupack.palletsortingapi.order.domain.Truck;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.TruckRepository;
 import com.tupack.palletsortingapi.user.domain.Driver;
 import com.tupack.palletsortingapi.user.infrastructure.outbound.database.DriverRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
+@Slf4j
 public class TruckService {
 
   private final TruckRepository truckRepository;

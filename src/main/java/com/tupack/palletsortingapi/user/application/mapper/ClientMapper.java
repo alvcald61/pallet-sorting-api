@@ -14,8 +14,8 @@ import org.mapstruct.ReportingPolicy;
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = ComponentModel.SPRING)
 public interface ClientMapper {
   @Mapping(target = "email", source = "user.email")
-  @Mapping(target = "firstName", source = "user.lastName")
-  @Mapping(target = "lastName", source = "user.firstName")
+  @Mapping(target = "firstName", source = "user.firstName")
+  @Mapping(target = "lastName", source = "user.lastName")
   @Mapping(target = "roles", source = "user.roles")
   ClientDto toDto(Client client);
 

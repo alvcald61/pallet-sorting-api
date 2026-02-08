@@ -5,15 +5,17 @@ import com.tupack.palletsortingapi.common.exception.InvalidOrderStateException;
 import com.tupack.palletsortingapi.common.exception.OrderNotFoundException;
 import com.tupack.palletsortingapi.order.domain.Order;
 import com.tupack.palletsortingapi.order.domain.OrderStatusUpdate;
-import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
+import com.tupack.palletsortingapi.order.domain.enums.OrderStatus;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderStatusUpdateRepository;
 import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderStatusService {
 
   private final OrderRepository orderRepository;

@@ -1,6 +1,6 @@
 package com.tupack.palletsortingapi.order.application.dto;
 
-import com.tupack.palletsortingapi.order.domain.emuns.TransportStatus;
+import com.tupack.palletsortingapi.order.domain.enums.TransportStatus;
 import java.time.LocalDateTime;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

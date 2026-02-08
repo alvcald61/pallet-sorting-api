@@ -1,7 +1,13 @@
 package com.tupack.palletsortingapi.order.infrastructure.outbound.database;
 
+import com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByClientDTO;
+import com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByDriverDTO;
+import com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByStatusDTO;
+import com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByTruckDTO;
 import com.tupack.palletsortingapi.order.domain.Order;
 import com.tupack.palletsortingapi.order.domain.Truck;
+import com.tupack.palletsortingapi.order.domain.enums.OrderStatus;
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -32,4 +38,57 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
   @EntityGraph(attributePaths = {"truck", "truck.driver", "client", "warehouse"})
   @Query("select o from Order o where o.truck.driver.user.id = :id")
   Page<Order> getAllByDriverId(Long id, Pageable pageable);
+
+  // Dashboard optimized queries
+  @Query("SELECT COUNT(o) FROM Order o WHERE o.orderStatus IN :statuses")
+  long countByStatusIn(@Param("statuses") List<OrderStatus> statuses);
+
+  @Query("SELECT COALESCE(SUM(o.amount), 0) FROM Order o")
+  BigDecimal sumAllAmounts();
+
+  @Query("SELECT COALESCE(SUM(o.totalVolume), 0) FROM Order o")
+  BigDecimal sumTotalVolume();
+
+  @Query("SELECT COALESCE(SUM(o.totalWeight), 0) FROM Order o")
+  BigDecimal sumTotalWeight();
+
+  @Query("SELECT new com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByStatusDTO(" +
+      "o.orderStatus, COUNT(o)) " +
+      "FROM Order o GROUP BY o.orderStatus")
+  List<OrdersByStatusDTO> countOrdersByStatus();
+
+  @Query("SELECT new com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByClientDTO(" +
+      "CAST(c.id AS string), " +
+      "CONCAT(c.user.firstName, ' ', c.user.lastName), " +
+      "c.businessName, " +
+      "COUNT(o)) " +
+      "FROM Order o JOIN o.client c " +
+      "GROUP BY c.id, c.user.firstName, c.user.lastName, c.businessName")
+  List<OrdersByClientDTO> countOrdersByClient();
+
+  @Query("SELECT new com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByDriverDTO(" +
+      "CAST(d.driverId AS string), " +
+      "CONCAT(d.user.firstName, ' ', d.user.lastName), " +
+      "CONCAT(d.user.firstName, ' ', d.user.lastName), " +
+      "COUNT(o)) " +
+      "FROM Order o JOIN o.truck t JOIN t.driver d " +
+      "WHERE t IS NOT NULL AND d IS NOT NULL " +
+      "GROUP BY d.driverId, d.user.firstName, d.user.lastName")
+  List<OrdersByDriverDTO> countOrdersByDriver();
+
+  @Query("SELECT new com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByTruckDTO(" +
+      "CAST(t.id AS string), " +
+      "t.licensePlate, " +
+      "t.licensePlate, " +
+      "COUNT(o)) " +
+      "FROM Order o JOIN o.truck t " +
+      "WHERE t IS NOT NULL " +
+      "GROUP BY t.id, t.licensePlate")
+  List<OrdersByTruckDTO> countOrdersByTruck();
+
+  @EntityGraph(attributePaths = {"client", "client.user"})
+  @Query("SELECT o FROM Order o WHERE o.orderStatus IN :statuses ORDER BY o.pickupDate ASC")
+  List<Order> findByStatusInOrderByPickupDateAsc(
+      @Param("statuses") List<OrderStatus> statuses,
+      Pageable pageable);
 }

@@ -1,7 +1,7 @@
 package com.tupack.palletsortingapi.fixtures;
 
 import com.tupack.palletsortingapi.order.domain.Truck;
-import com.tupack.palletsortingapi.order.domain.emuns.TruckStatus;
+import com.tupack.palletsortingapi.order.domain.enums.TruckStatus;
 import java.math.BigDecimal;
 
 /**

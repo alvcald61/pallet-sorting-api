@@ -8,7 +8,7 @@ import com.tupack.palletsortingapi.order.domain.Order;
 import com.tupack.palletsortingapi.order.domain.OrderDocument;
 import com.tupack.palletsortingapi.order.domain.Warehouse;
 import com.tupack.palletsortingapi.order.domain.Zone;
-import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
+import com.tupack.palletsortingapi.order.domain.enums.OrderStatus;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.WarehouseRepository;
 import com.tupack.palletsortingapi.user.domain.Client;
 import com.tupack.palletsortingapi.user.domain.User;
@@ -17,6 +17,7 @@ import com.tupack.palletsortingapi.utils.PackingType;
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderInitializationService {
 
   private final ClientRepository clientRepository;

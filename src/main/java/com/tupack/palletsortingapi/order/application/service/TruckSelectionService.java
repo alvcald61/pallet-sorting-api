@@ -4,11 +4,12 @@ import com.tupack.palletsortingapi.common.exception.NoTruckAvailableException;
 import com.tupack.palletsortingapi.order.application.dto.SolutionDto;
 import com.tupack.palletsortingapi.order.domain.Order;
 import com.tupack.palletsortingapi.order.domain.Truck;
-import com.tupack.palletsortingapi.order.domain.emuns.TruckStatus;
+import com.tupack.palletsortingapi.order.domain.enums.TruckStatus;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.TruckRepository;
 import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TruckSelectionService {
 
   private final TruckRepository truckRepository;

@@ -5,19 +5,21 @@ import com.tupack.palletsortingapi.common.exception.BusinessException;
 import com.tupack.palletsortingapi.common.exception.OrderDocumentNotFoundException;
 import com.tupack.palletsortingapi.order.domain.Order;
 import com.tupack.palletsortingapi.order.domain.OrderDocument;
-import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
+import com.tupack.palletsortingapi.order.domain.enums.OrderStatus;
 import com.tupack.palletsortingapi.order.domain.id.OrderDocumentId;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderDocumentRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderRepository;
-import com.tupack.palletsortingapi.order.application.LocalFileUploader;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.storage.LocalFileUploader;
 import java.io.IOException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderDocumentService {
 
   private final OrderDocumentRepository orderDocumentRepository;

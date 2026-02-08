@@ -1,7 +1,7 @@
 package com.tupack.palletsortingapi.fixtures;
 
 import com.tupack.palletsortingapi.order.domain.Order;
-import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
+import com.tupack.palletsortingapi.order.domain.enums.OrderStatus;
 import com.tupack.palletsortingapi.utils.PackingType;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;

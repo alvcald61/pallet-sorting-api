@@ -1,6 +1,6 @@
 package com.tupack.palletsortingapi.order.application.dto;
 
-import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
+import com.tupack.palletsortingapi.order.domain.enums.OrderStatus;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.Value;

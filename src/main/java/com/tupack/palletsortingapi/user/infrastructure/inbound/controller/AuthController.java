@@ -8,6 +8,7 @@ import com.tupack.palletsortingapi.user.application.dto.TokenRefreshRequest;
 import com.tupack.palletsortingapi.user.application.AuthService;
 import jakarta.validation.Valid;
 import java.util.Map;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.GrantedAuthority;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
+@Slf4j
 public class AuthController {
 
   private final AuthService authService;

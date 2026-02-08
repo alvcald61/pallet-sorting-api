@@ -1,7 +1,7 @@
 package com.tupack.palletsortingapi.order.infrastructure.outbound.database;
 
 import com.tupack.palletsortingapi.order.domain.TransportStatusUpdate;
-import com.tupack.palletsortingapi.order.domain.emuns.TransportStatus;
+import com.tupack.palletsortingapi.order.domain.enums.TransportStatus;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;

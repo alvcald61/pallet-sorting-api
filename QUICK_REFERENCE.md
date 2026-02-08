@@ -76,7 +76,7 @@ import lombok.NoArgsConstructor;
 ### Para Servicio
 ```java
 import com.tupack.palletsortingapi.order.domain.Order;
-import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
+import com.tupack.palletsortingapi.order.domain.enums.OrderStatus;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dto.*;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.dabatase.OrderRepository;
 import com.tupack.palletsortingapi.user.infrastructure.outbound.dabatase.ClientRepository;

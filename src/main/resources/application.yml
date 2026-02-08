@@ -3,3 +3,9 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:dev}
   application:
     name: pallet-sorting-api
+
+application:
+  storage:
+    base-path: ${STORAGE_PATH:./uploads}
+    allowed-extensions: pdf,jpg,jpeg,png,doc,docx
+    max-file-size: 10485760  # 10MB in bytes

@@ -1,7 +1,9 @@
 package com.tupack.palletsortingapi.user.application;
 
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
+import com.tupack.palletsortingapi.common.exception.BusinessException;
 import com.tupack.palletsortingapi.common.exception.ClientNotFoundException;
+import com.tupack.palletsortingapi.common.exception.DuplicateEmailException;
 import com.tupack.palletsortingapi.common.exception.RoleNotFoundException;
 import com.tupack.palletsortingapi.user.application.dto.ClientDto;
 import com.tupack.palletsortingapi.user.application.dto.CreateClientRequest;
@@ -16,12 +18,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ClientService {
   private final ClientRepository clientRepository;
   private final ClientMapper clientMapper;
@@ -53,30 +57,30 @@ public class ClientService {
    */
   @Transactional
   public GenericResponse createClient(CreateClientRequest request) {
+    log.info("Creating new client with email: {}", request.getEmail());
+
     // Validate email doesn't already exist
     if (userRepository.existsByEmail(request.getEmail())) {
-      return GenericResponse.error("El email ya está registrado");
+      log.warn("Attempt to create client with duplicate email: {}", request.getEmail());
+      throw new DuplicateEmailException(request.getEmail());
     }
 
-    try {
-      // Create User
-      Set<Role> roles = resolveRoles(request.getRoles());
-      User user = User.builder().firstName(request.getFirstName()).lastName(request.getLastName())
-          .email(request.getEmail().toLowerCase())
-          .password(passwordEncoder.encode(request.getPassword())).roles(roles).enabled(true)
-          .build();
-      User savedUser = userRepository.save(user);
+    // Create User
+    Set<Role> roles = resolveRoles(request.getRoles());
+    User user = User.builder().firstName(request.getFirstName()).lastName(request.getLastName())
+        .email(request.getEmail().toLowerCase())
+        .password(passwordEncoder.encode(request.getPassword())).roles(roles).enabled(true)
+        .build();
+    User savedUser = userRepository.save(user);
 
-      // Create Client associated with User
-      Client client = Client.builder().user(savedUser).ruc(request.getRuc())
-          .businessName(request.getBusinessName()).phone(request.getPhone())
-          .address(request.getAddress()).trust(request.isTrust()).enabled(true).build();
-      Client savedClient = clientRepository.save(client);
+    // Create Client associated with User
+    Client client = Client.builder().user(savedUser).ruc(request.getRuc())
+        .businessName(request.getBusinessName()).phone(request.getPhone())
+        .address(request.getAddress()).trust(request.isTrust()).enabled(true).build();
+    Client savedClient = clientRepository.save(client);
 
-      return GenericResponse.success(clientMapper.toDto(savedClient));
-    } catch (Exception e) {
-      return GenericResponse.error("Error al crear el cliente: " + e.getMessage());
-    }
+    log.info("Client created successfully with ID: {}", savedClient.getId());
+    return GenericResponse.success(clientMapper.toDto(savedClient));
   }
 
   /**
@@ -84,9 +88,12 @@ public class ClientService {
    */
   @Transactional
   public GenericResponse updateClient(Long id, CreateClientRequest request) {
+    log.info("Updating client with ID: {}", id);
+
     return clientRepository.findById(id).map(client -> {
       if (!client.isEnabled()) {
-        return GenericResponse.error("Cliente desactivado");
+        log.warn("Attempt to update disabled client: {}", id);
+        throw new BusinessException("Client is disabled", "CLIENT_DISABLED");
       }
 
       // Update user information if needed

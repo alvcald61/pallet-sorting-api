@@ -9,6 +9,7 @@ import com.tupack.palletsortingapi.order.infrastructure.outbound.database.PriceC
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.PriceRepository;
 import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderPricingService {
 
   private final ZoneResolverService zoneResolverService;

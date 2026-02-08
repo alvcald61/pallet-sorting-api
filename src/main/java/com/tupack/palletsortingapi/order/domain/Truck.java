@@ -1,6 +1,6 @@
 package com.tupack.palletsortingapi.order.domain;
 
-import com.tupack.palletsortingapi.order.domain.emuns.TruckStatus;
+import com.tupack.palletsortingapi.order.domain.enums.TruckStatus;
 import com.tupack.palletsortingapi.user.domain.Driver;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;

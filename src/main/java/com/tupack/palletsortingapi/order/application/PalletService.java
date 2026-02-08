@@ -1,7 +1,9 @@
 package com.tupack.palletsortingapi.order.application;
 
-import com.tupack.palletsortingapi.order.application.dto.CreatePalletRequest;
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
+import com.tupack.palletsortingapi.common.exception.BusinessException;
+import com.tupack.palletsortingapi.common.exception.PalletNotFoundException;
+import com.tupack.palletsortingapi.order.application.dto.CreatePalletRequest;
 import com.tupack.palletsortingapi.order.application.dto.PalletDto;
 import com.tupack.palletsortingapi.order.application.mapper.PalletMapper;
 import com.tupack.palletsortingapi.order.domain.Pallet;
@@ -9,11 +11,13 @@ import com.tupack.palletsortingapi.order.infrastructure.outbound.database.Pallet
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PalletService {
 
   private final PalletRepository palletRepository;
@@ -26,6 +30,7 @@ public class PalletService {
     List<PalletDto> palletDtos =
         palletRepository.findAllByEnabled(true).stream().map(palletMapper::toDto)
         .collect(Collectors.toList());
+    log.info("Retrieved {} active pallets", palletDtos.size());
     return GenericResponse.success(palletDtos);
   }
 
@@ -36,8 +41,9 @@ public class PalletService {
     var pallet = palletRepository.findById(id)
         .filter(Pallet::isEnabled)
         .map(palletMapper::toDto);
+    log.info("Retrieved pallet with id: {}", id);
     return pallet.map(GenericResponse::success)
-        .orElseGet(() -> GenericResponse.error("Pallet no encontrado"));
+        .orElseThrow(() -> new PalletNotFoundException(id));
   }
 
   /**
@@ -45,14 +51,11 @@ public class PalletService {
    */
   @Transactional
   public GenericResponse createPallet(CreatePalletRequest request) {
-    try {
-      Pallet pallet = palletMapper.toEntity(request);
-      pallet.setEnabled(true);
-      Pallet saved = palletRepository.save(pallet);
-      return GenericResponse.success(palletMapper.toDto(saved));
-    } catch (Exception e) {
-      return GenericResponse.error("Error al crear el pallet: " + e.getMessage());
-    }
+    Pallet pallet = palletMapper.toEntity(request);
+    pallet.setEnabled(true);
+    Pallet saved = palletRepository.save(pallet);
+    log.info("Successfully created pallet with id: {}", saved.getId());
+    return GenericResponse.success(palletMapper.toDto(saved));
   }
 
   /**
@@ -63,14 +66,16 @@ public class PalletService {
     return palletRepository.findById(id)
         .map(pallet -> {
           if (!pallet.isEnabled()) {
-            return GenericResponse.error("Pallet desactivado");
+            log.warn("Attempt to update disabled pallet with id: {}", id);
+            throw new BusinessException("Pallet is disabled", "PALLET_DISABLED");
           }
 
           palletMapper.updateEntity(request, pallet);
           Pallet updated = palletRepository.save(pallet);
+          log.info("Successfully updated pallet with id: {}", id);
           return GenericResponse.success(palletMapper.toDto(updated));
         })
-        .orElse(GenericResponse.error("Pallet no encontrado"));
+        .orElseThrow(() -> new PalletNotFoundException(id));
   }
 
   /**
@@ -82,8 +87,9 @@ public class PalletService {
         .map(pallet -> {
           pallet.setEnabled(false);
           palletRepository.save(pallet);
+          log.info("Successfully deleted (soft) pallet with id: {}", id);
           return GenericResponse.success("Pallet eliminado exitosamente");
         })
-        .orElse(GenericResponse.error("Pallet no encontrado"));
+        .orElseThrow(() -> new PalletNotFoundException(id));
   }
 }

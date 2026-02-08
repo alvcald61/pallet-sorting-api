@@ -7,11 +7,12 @@ import com.tupack.palletsortingapi.order.application.dto.TwoDimensionSolutionRes
 import com.tupack.palletsortingapi.order.application.service.OrderDocumentService;
 import com.tupack.palletsortingapi.order.application.service.OrderPackingService;
 import com.tupack.palletsortingapi.order.application.service.OrderQueryService;
-import com.tupack.palletsortingapi.order.application.service.OrderSchedulingServiceRefactored;
+import com.tupack.palletsortingapi.order.application.service.OrderSchedulingService;
 import com.tupack.palletsortingapi.order.application.service.OrderStatusService;
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -19,15 +20,17 @@ import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderService {
 
   private final OrderPackingService packingService;
-  private final OrderSchedulingServiceRefactored schedulingService;
+  private final OrderSchedulingService schedulingService;
   private final OrderQueryService queryService;
   private final OrderStatusService statusService;
   private final OrderDocumentService documentService;
 
   public TwoDimensionSolutionResponse scheduleOrder(String packingType, SolvePackingRequest request) {
+    log.info("Scheduling order with packing type: {}", packingType);
     return schedulingService.scheduleOrder(packingType, request);
   }
 
@@ -52,6 +55,7 @@ public class OrderService {
   }
 
   public GenericResponse updateOrderStatus(Long orderId, String status) {
+    log.info("Updating order status: orderId={}, status={}", orderId, status);
     return statusService.updateOrderStatus(orderId, status);
   }
 
@@ -61,6 +65,7 @@ public class OrderService {
   }
 
   public GenericResponse uploadDocument(Long documentId, Long orderId, MultipartFile file) {
+    log.info("Uploading document: documentId={}, orderId={}, filename={}", documentId, orderId, file.getOriginalFilename());
     return documentService.uploadDocument(documentId, orderId, file);
   }
 }

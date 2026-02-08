@@ -7,6 +7,7 @@ import com.tupack.palletsortingapi.user.application.dto.CreateClientRequest;
 import com.tupack.palletsortingapi.user.domain.Client;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/client")
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 public class ClientController {
 
   private final ClientService clientService;

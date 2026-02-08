@@ -1,4 +1,4 @@
-package com.tupack.palletsortingapi.order.domain.emuns;
+package com.tupack.palletsortingapi.order.domain.enums;
 
 public enum TruckStatus {
   AVAILABLE,

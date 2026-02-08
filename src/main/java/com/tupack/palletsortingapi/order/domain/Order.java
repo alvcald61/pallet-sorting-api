@@ -1,7 +1,7 @@
 package com.tupack.palletsortingapi.order.domain;
 
-import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
-import com.tupack.palletsortingapi.order.domain.emuns.TransportStatus;
+import com.tupack.palletsortingapi.order.domain.enums.OrderStatus;
+import com.tupack.palletsortingapi.order.domain.enums.TransportStatus;
 import com.tupack.palletsortingapi.user.domain.Client;
 import com.tupack.palletsortingapi.utils.PackingType;
 import jakarta.persistence.EnumType;

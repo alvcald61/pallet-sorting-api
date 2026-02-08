@@ -1,7 +1,10 @@
 package com.tupack.palletsortingapi.user.application;
 
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
+import com.tupack.palletsortingapi.common.exception.BusinessException;
 import com.tupack.palletsortingapi.common.exception.DriverNotFoundException;
+import com.tupack.palletsortingapi.common.exception.DuplicateDniException;
+import com.tupack.palletsortingapi.common.exception.DuplicateEmailException;
 import com.tupack.palletsortingapi.common.exception.RoleNotFoundException;
 import com.tupack.palletsortingapi.user.application.dto.CreateDriverRequest;
 import com.tupack.palletsortingapi.user.application.mapper.DriverMapper;
@@ -15,12 +18,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DriverService {
   private final DriverRepository driverRepository;
   private final DriverMapper driverMapper;
@@ -34,6 +39,7 @@ public class DriverService {
   public GenericResponse getAllDrivers() {
     var data = driverRepository.findAllByEnabled(true).stream().map(driverMapper::toDto)
         .collect(Collectors.toList());
+    log.info("Retrieved {} active drivers", data.size());
     return GenericResponse.success(data);
   }
 
@@ -42,6 +48,7 @@ public class DriverService {
    */
   public GenericResponse getDriverById(Long id) {
     var driver = driverRepository.findById(id).filter(Driver::isEnabled).map(driverMapper::toDto);
+    log.info("Retrieved driver with id: {}", id);
     return driver.map(GenericResponse::success)
         .orElseThrow(() -> new DriverNotFoundException(id));
   }
@@ -54,32 +61,32 @@ public class DriverService {
   public GenericResponse createDriver(CreateDriverRequest request) {
     // Validate email doesn't already exist
     if (userRepository.existsByEmail(request.getEmail())) {
-      return GenericResponse.error("El email ya está registrado");
+      log.warn("Attempt to create driver with duplicate email: {}", request.getEmail());
+      throw new DuplicateEmailException(request.getEmail());
     }
 
     // Validate DNI doesn't already exist
     if (driverRepository.findByDni(request.getDni()).isPresent()) {
-      return GenericResponse.error("El DNI ya está registrado");
+      log.warn("Attempt to create driver with duplicate DNI: {}", request.getDni());
+      throw new DuplicateDniException(request.getDni());
     }
 
-    try {
-      // Create User
-      Set<Role> roles = resolveRoles(request.getRoles());
-      User user = User.builder().firstName(request.getFirstName()).lastName(request.getLastName())
-          .email(request.getEmail().toLowerCase())
-          .password(passwordEncoder.encode(request.getPassword())).roles(roles).enabled(true)
-          .build();
-      User savedUser = userRepository.save(user);
+    // Create User
+    Set<Role> roles = resolveRoles(request.getRoles());
+    User user = User.builder().firstName(request.getFirstName()).lastName(request.getLastName())
+        .email(request.getEmail().toLowerCase())
+        .password(passwordEncoder.encode(request.getPassword())).roles(roles).enabled(true)
+        .build();
+    User savedUser = userRepository.save(user);
 
-      // Create Driver associated with User
-      Driver driver = Driver.builder().user(savedUser).dni(request.getDni())
-          .phone(request.getPhone()).enabled(true).build();
-      Driver savedDriver = driverRepository.save(driver);
+    // Create Driver associated with User
+    Driver driver = Driver.builder().user(savedUser).dni(request.getDni())
+        .phone(request.getPhone()).enabled(true).build();
+    Driver savedDriver = driverRepository.save(driver);
 
-      return GenericResponse.success(driverMapper.toDto(savedDriver));
-    } catch (Exception e) {
-      return GenericResponse.error("Error al crear el conductor: " + e.getMessage());
-    }
+    log.info("Successfully created driver with id: {} and email: {}", savedDriver.getDriverId(),
+        request.getEmail());
+    return GenericResponse.success(driverMapper.toDto(savedDriver));
   }
 
   /**
@@ -89,7 +96,8 @@ public class DriverService {
   public GenericResponse updateDriver(Long id, CreateDriverRequest request) {
     return driverRepository.findById(id).map(driver -> {
       if (!driver.isEnabled()) {
-        return GenericResponse.error("Conductor desactivado");
+        log.warn("Attempt to update disabled driver with id: {}", id);
+        throw new BusinessException("Driver is disabled", "DRIVER_DISABLED");
       }
 
       // Update user information if needed
@@ -108,6 +116,7 @@ public class DriverService {
       driver.setPhone(request.getPhone());
       Driver updated = driverRepository.save(driver);
 
+      log.info("Successfully updated driver with id: {}", id);
       return GenericResponse.success(driverMapper.toDto(updated));
     }).orElseThrow(() -> new DriverNotFoundException(id));
   }
@@ -120,6 +129,7 @@ public class DriverService {
     return driverRepository.findById(id).map(driver -> {
       driver.setEnabled(false);
       driverRepository.save(driver);
+      log.info("Successfully deleted (soft) driver with id: {}", id);
       return GenericResponse.success("Conductor eliminado exitosamente");
     }).orElseThrow(() -> new DriverNotFoundException(id));
   }

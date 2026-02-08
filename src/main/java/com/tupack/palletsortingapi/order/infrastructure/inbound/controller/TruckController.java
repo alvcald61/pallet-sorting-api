@@ -4,6 +4,7 @@ import com.tupack.palletsortingapi.order.application.TruckService;
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.order.application.dto.TruckDto;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/truck")
 @RequiredArgsConstructor
+@Slf4j
 @CrossOrigin(origins = "*")
 public class TruckController {
 

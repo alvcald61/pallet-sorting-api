@@ -3,9 +3,10 @@ package com.tupack.palletsortingapi.order.infrastructure.inbound.controller;
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.order.application.dto.TransportStatusUpdateRequest;
 import com.tupack.palletsortingapi.order.application.service.TransportStatusService;
-import com.tupack.palletsortingapi.order.domain.emuns.TransportStatus;
+import com.tupack.palletsortingapi.order.domain.enums.TransportStatus;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -22,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/order/{orderId}/transport")
 @RequiredArgsConstructor
+@Slf4j
 public class TransportStatusController {
 
   private final TransportStatusService transportStatusService;

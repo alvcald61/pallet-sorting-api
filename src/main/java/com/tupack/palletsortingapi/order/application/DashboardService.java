@@ -8,7 +8,7 @@ import com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByTruck
 import com.tupack.palletsortingapi.order.application.dto.dashboard.PendingOrderDTO;
 import com.tupack.palletsortingapi.order.application.dto.dashboard.PerformanceMetricsDTO;
 import com.tupack.palletsortingapi.order.domain.Order;
-import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
+import com.tupack.palletsortingapi.order.domain.enums.OrderStatus;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.TruckRepository;
 import com.tupack.palletsortingapi.user.infrastructure.outbound.database.ClientRepository;
@@ -16,10 +16,13 @@ import com.tupack.palletsortingapi.user.infrastructure.outbound.database.DriverR
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class DashboardService {
 
   private final OrderRepository orderRepository;
@@ -31,18 +34,17 @@ public class DashboardService {
    * Get general dashboard statistics
    */
   public DashboardStatsDTO getStats() {
-    List<Order> allOrders = orderRepository.findAll();
+    log.debug("Calculating dashboard statistics");
 
-    long totalOrders = allOrders.size();
-    long pendingOrders = allOrders.stream().filter(
-        order -> order.getOrderStatus() == OrderStatus.APPROVED
-            || order.getOrderStatus() == OrderStatus.IN_PROGRESS).count();
-    long deliveredOrders =
-        allOrders.stream().filter(order -> order.getOrderStatus() == OrderStatus.DELIVERED).count();
+    long totalOrders = orderRepository.count();
+    long pendingOrders = orderRepository.countByStatusIn(
+        List.of(OrderStatus.APPROVED, OrderStatus.IN_PROGRESS));
+    long deliveredOrders = orderRepository.countByStatusIn(
+        List.of(OrderStatus.DELIVERED));
+    Double totalRevenue = orderRepository.sumAllAmounts().doubleValue();
 
-    Double totalRevenue = allOrders.stream()
-        .mapToDouble(order -> order.getAmount() != null ? order.getAmount().doubleValue() : 0.0)
-        .sum();
+    log.debug("Stats calculated: totalOrders={}, pendingOrders={}, deliveredOrders={}, revenue={}",
+        totalOrders, pendingOrders, deliveredOrders, totalRevenue);
 
     return DashboardStatsDTO.builder().totalOrders(totalOrders).pendingOrders(pendingOrders)
         .deliveredOrders(deliveredOrders).totalRevenue(totalRevenue).build();
@@ -53,10 +55,13 @@ public class DashboardService {
    */
   public List<PendingOrderDTO> getPendingOrders(Integer limit) {
     int actualLimit = limit != null && limit > 0 ? limit : 10;
+    log.debug("Fetching pending orders with limit: {}", actualLimit);
 
-    return orderRepository.findAll().stream().filter(
-        order -> order.getOrderStatus() == OrderStatus.APPROVED
-            || order.getOrderStatus() == OrderStatus.IN_PROGRESS).limit(actualLimit).map(order -> {
+    Pageable pageable = Pageable.ofSize(actualLimit);
+    List<Order> pendingOrders = orderRepository.findByStatusInOrderByPickupDateAsc(
+        List.of(OrderStatus.APPROVED, OrderStatus.IN_PROGRESS), pageable);
+
+    return pendingOrders.stream().map(order -> {
       String clientName = "";
       if (order.getClient() != null && order.getClient().getUser() != null) {
         clientName = order.getClient().getUser().getFirstName() + " " + order.getClient().getUser()
@@ -73,89 +78,48 @@ public class DashboardService {
    * Get order count grouped by client
    */
   public List<OrdersByClientDTO> getOrdersByClient() {
-    List<Order> allOrders = orderRepository.findAll();
-
-    return allOrders.stream().filter(order -> order.getClient() != null)
-        .collect(Collectors.groupingBy(Order::getClient, Collectors.counting())).entrySet().stream()
-        .map(entry -> {
-          String clientName = "";
-          if (entry.getKey().getUser() != null) {
-            clientName = entry.getKey().getUser().getFirstName() + " " + entry.getKey().getUser()
-                .getLastName();
-          }
-          return OrdersByClientDTO.builder().id(entry.getKey().getId().toString())
-              .clientName(clientName).businessName(entry.getKey().getBusinessName())
-              .count(entry.getValue()).build();
-        }).collect(Collectors.toList());
+    log.debug("Fetching orders grouped by client");
+    return orderRepository.countOrdersByClient();
   }
 
   /**
    * Get order count grouped by driver
    */
   public List<OrdersByDriverDTO> getOrdersByDriver() {
-    List<Order> allOrders = orderRepository.findAll();
-
-    return allOrders.stream().filter(
-            order -> order.getTruck() != null
-                && order.getTruck().getDriver() != null).collect(
-            Collectors.groupingBy(order -> order.getTruck().getDriver(),
-                Collectors.counting())).entrySet().stream().map(
-            entry -> OrdersByDriverDTO.builder().id(entry.getKey().getDriverId().toString()).driverName(
-                entry.getKey().getUser() != null ? entry.getKey().getUser().getFirstName() + " "
-                    + entry.getKey().getUser().getLastName() : "").name(
-                entry.getKey().getUser() != null ? entry.getKey().getUser().getFirstName() + " "
-                    + entry.getKey().getUser().getLastName() : "").count(entry.getValue()).build())
-        .collect(Collectors.toList());
+    log.debug("Fetching orders grouped by driver");
+    return orderRepository.countOrdersByDriver();
   }
 
   /**
    * Get order count grouped by truck
    */
   public List<OrdersByTruckDTO> getOrdersByTruck() {
-    List<Order> allOrders = orderRepository.findAll();
-
-    return allOrders.stream()
-        .filter(order -> order != null && order.getTruck() != null)
-        .collect(
-            Collectors.groupingBy(Order::getTruck, Collectors.counting()))
-        .entrySet().stream().map(
-            entry -> OrdersByTruckDTO.builder().id(entry.getKey().getId().toString())
-                .truckPlate(entry.getKey().getLicensePlate())
-                .plate(entry.getKey().getLicensePlate()).count(entry.getValue()).build())
-        .collect(Collectors.toList());
+    log.debug("Fetching orders grouped by truck");
+    return orderRepository.countOrdersByTruck();
   }
 
   /**
    * Get order count grouped by status
    */
   public List<OrdersByStatusDTO> getOrdersByStatus() {
-    List<Order> allOrders = orderRepository.findAll();
-
-    return allOrders.stream()
-        .collect(Collectors.groupingBy(Order::getOrderStatus, Collectors.counting())).entrySet()
-        .stream().map(entry -> OrdersByStatusDTO.builder().status(entry.getKey().name())
-            .orderStatus(entry.getKey().name()).count(entry.getValue()).total(entry.getValue())
-            .build()).collect(Collectors.toList());
+    log.debug("Fetching orders grouped by status");
+    return orderRepository.countOrdersByStatus();
   }
 
   /**
    * Get performance metrics
    */
   public PerformanceMetricsDTO getPerformanceMetrics() {
-    List<Order> allOrders = orderRepository.findAll();
+    log.debug("Calculating performance metrics");
 
-    Double totalVolume = allOrders.stream().mapToDouble(
-        order -> order.getTotalVolume() != null ? order.getTotalVolume().doubleValue() : 0.0).sum();
-
-    Double totalWeight = allOrders.stream().mapToDouble(
-        order -> order.getTotalWeight() != null ? order.getTotalWeight().doubleValue() : 0.0).sum();
-
-    Double totalIncome = allOrders.stream()
-        .mapToDouble(order -> order.getAmount() != null ? order.getAmount().doubleValue() : 0.0)
-        .sum();
-
-    long totalOrdersCount = allOrders.size();
+    Double totalVolume = orderRepository.sumTotalVolume().doubleValue();
+    Double totalWeight = orderRepository.sumTotalWeight().doubleValue();
+    Double totalIncome = orderRepository.sumAllAmounts().doubleValue();
+    long totalOrdersCount = orderRepository.count();
     Double averageDeliveryTime = 2.5; // Placeholder, adjust based on actual logic
+
+    log.debug("Performance metrics: volume={}, weight={}, income={}, orders={}",
+        totalVolume, totalWeight, totalIncome, totalOrdersCount);
 
     return PerformanceMetricsDTO.builder().totalVolume(totalVolume).totalWeight(totalWeight)
         .averageDeliveryTime(averageDeliveryTime).totalIncome(totalIncome)

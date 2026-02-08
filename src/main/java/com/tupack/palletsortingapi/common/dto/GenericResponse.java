@@ -40,7 +40,7 @@ public class GenericResponse {
   }
 
   public static GenericResponse error(String message) {
-    return new GenericResponse(null, message, HttpStatus.NOT_FOUND.value(), null);
+    return new GenericResponse(null, message, HttpStatus.INTERNAL_SERVER_ERROR.value(), null);
   }
 
   public static GenericResponse internalError(String message) {

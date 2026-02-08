@@ -1,6 +1,6 @@
 package com.tupack.palletsortingapi.common.exception;
 
-import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;;
+import com.tupack.palletsortingapi.order.domain.enums.OrderStatus;;
 
 /**
  * Exception thrown when an invalid order state transition is attempted.

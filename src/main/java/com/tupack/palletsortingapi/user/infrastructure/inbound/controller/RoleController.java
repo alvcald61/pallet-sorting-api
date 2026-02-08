@@ -4,6 +4,7 @@ import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.user.application.RoleService;
 import com.tupack.palletsortingapi.user.application.dto.CreateRoleRequest;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/api/role")
 @RequiredArgsConstructor
+@Slf4j
 public class RoleController {
 
   private final RoleService roleService;

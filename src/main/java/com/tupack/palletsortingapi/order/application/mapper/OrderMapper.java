@@ -2,8 +2,8 @@ package com.tupack.palletsortingapi.order.application.mapper;
 
 import com.tupack.palletsortingapi.order.application.dto.OrderDto;
 import com.tupack.palletsortingapi.order.domain.Order;
-import com.tupack.palletsortingapi.order.domain.emuns.OrderStatus;
-import com.tupack.palletsortingapi.order.domain.emuns.TransportStatus;
+import com.tupack.palletsortingapi.order.domain.enums.OrderStatus;
+import com.tupack.palletsortingapi.order.domain.enums.TransportStatus;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.EnumMapping;
 import org.mapstruct.Mapper;

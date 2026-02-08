@@ -41,6 +41,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
@@ -51,6 +52,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class OrderQueryService {
 
   private static final LocalTime START_TIME = LocalTime.of(8, 0);

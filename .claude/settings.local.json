@@ -12,7 +12,13 @@
       "Bash(%PATH%)",
       "Bash(cmd /c \"set JAVA_HOME=C:\\\\Program Files\\\\Java\\\\jdk-17.0.2 && mvn -version\")",
       "Bash(cmd /c compile.bat)",
-      "Bash(\"C:\\\\Program Files\\\\Java\\\\jdk-17.0.2\\\\bin\\\\java.exe\" -version)"
+      "Bash(\"C:\\\\Program Files\\\\Java\\\\jdk-17.0.2\\\\bin\\\\java.exe\" -version)",
+      "Bash(find:*)",
+      "Bash(test:*)",
+      "Bash(xargs sed:*)",
+      "Bash(./mvnw clean compile:*)",
+      "Bash(compile.bat)",
+      "Bash(src/main/java/com/tupack/palletsortingapi/common/exception/DuplicateEmailException.java << 'EOF'\npackage com.tupack.palletsortingapi.common.exception;\n\npublic class DuplicateEmailException extends BusinessException {\n  public DuplicateEmailException\\(String email\\) {\n    super\\(\"Email \" + email + \" is already registered\", \"DUPLICATE_EMAIL\"\\);\n  }\n}\nEOF)"
     ]
   }
 }

@@ -1,6 +1,6 @@
 package com.tupack.palletsortingapi.order.application.dto;
 
-import com.tupack.palletsortingapi.order.domain.emuns.TransportStatus;
+import com.tupack.palletsortingapi.order.domain.enums.TransportStatus;
 import com.tupack.palletsortingapi.user.application.dto.DriverDto;
 import com.tupack.palletsortingapi.user.domain.Driver;
 import com.tupack.palletsortingapi.utils.PackingType;

@@ -161,6 +161,26 @@ public class GlobalExceptionHandler {
   }
 
   /**
+   * Handle FileUploadException (400).
+   */
+  @ExceptionHandler(FileUploadException.class)
+  public ResponseEntity<ErrorResponse> handleFileUploadException(
+      FileUploadException ex,
+      HttpServletRequest request) {
+
+    logger.warn("File upload error: {}", ex.getMessage());
+
+    ErrorResponse error = ErrorResponse.of(
+        HttpStatus.BAD_REQUEST.value(),
+        "File Upload Failed",
+        ex.getMessage(),
+        request.getRequestURI()
+    ).withErrorCode("FILE_UPLOAD_ERROR");
+
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+  }
+
+  /**
    * Handle IllegalArgumentException (400).
    */
   @ExceptionHandler(IllegalArgumentException.class)

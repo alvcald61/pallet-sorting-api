@@ -6,8 +6,9 @@ import com.tupack.palletsortingapi.order.application.dto.TwoDimensionSolutionRes
 import com.tupack.palletsortingapi.order.application.mapper.TruckMapper;
 import com.tupack.palletsortingapi.order.domain.Order;
 import com.tupack.palletsortingapi.order.domain.Truck;
-import com.tupack.palletsortingapi.order.domain.emuns.TransportStatus;
+import com.tupack.palletsortingapi.order.domain.enums.TransportStatus;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +23,8 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @Service
 @RequiredArgsConstructor
-public class OrderSchedulingServiceRefactored {
+@Slf4j
+public class OrderSchedulingService {
 
   // Specialized services
   private final OrderPackingService packingService;
