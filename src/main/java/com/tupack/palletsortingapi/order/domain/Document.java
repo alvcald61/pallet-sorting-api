@@ -30,6 +30,7 @@ public class Document {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long documentId;
   private String documentName;
+  private String storagePath;
   private Boolean required;
 
   @ManyToMany(mappedBy = "documents")

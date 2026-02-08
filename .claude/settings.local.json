@@ -1,7 +1,18 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mvn clean compile:*)"
+      "Bash(mvn clean compile:*)",
+      "Bash(mvn compile:*)",
+      "Bash(java:*)",
+      "Bash(mvn:*)",
+      "Bash(where:*)",
+      "Bash(dir:*)",
+      "Bash(set JAVA_HOME=C:Program FilesJavajdk-17.0.2:*)",
+      "Bash(set PATH=%JAVA_HOME%bin)",
+      "Bash(%PATH%)",
+      "Bash(cmd /c \"set JAVA_HOME=C:\\\\Program Files\\\\Java\\\\jdk-17.0.2 && mvn -version\")",
+      "Bash(cmd /c compile.bat)",
+      "Bash(\"C:\\\\Program Files\\\\Java\\\\jdk-17.0.2\\\\bin\\\\java.exe\" -version)"
     ]
   }
 }

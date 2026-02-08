@@ -2,7 +2,10 @@ package com.tupack.palletsortingapi.order.infrastructure.inbound.controller;
 
 import com.tupack.palletsortingapi.order.application.WarehouseService;
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
+import com.tupack.palletsortingapi.order.application.dto.DocumentWarehouseDto;
+import com.tupack.palletsortingapi.order.application.dto.UpdateDocumentWarehouseDto;
 import com.tupack.palletsortingapi.order.domain.Warehouse;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -61,6 +64,27 @@ public class WarehouseController {
   @DeleteMapping("/{id}")
   public ResponseEntity<GenericResponse> deleteWarehouse(@PathVariable Long id) {
     GenericResponse response = warehouseService.deleteWarehouse(id);
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Get all documents associated with a warehouse
+   */
+  @GetMapping("/{id}/documents")
+  public ResponseEntity<GenericResponse> getWarehouseDocuments(@PathVariable Long id) {
+    GenericResponse response = warehouseService.getWarehouseDocuments(id);
+    return ResponseEntity.ok(response);
+  }
+
+  /**
+   * Update documents associated with a warehouse
+   */
+  @PutMapping("/{id}/documents")
+  public ResponseEntity<GenericResponse> updateWarehouseDocuments(
+      @PathVariable Long id,
+      @RequestBody DocumentWarehouseDto documentIds
+  ) {
+    GenericResponse response = warehouseService.updateWarehouseDocuments(id, documentIds.documents());
     return ResponseEntity.ok(response);
   }
 }

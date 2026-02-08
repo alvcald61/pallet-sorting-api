@@ -1,11 +1,19 @@
 package com.tupack.palletsortingapi.order.application;
 
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
+import com.tupack.palletsortingapi.common.exception.DocumentNotFoundException;
 import com.tupack.palletsortingapi.common.exception.WarehouseNotFoundException;
+import com.tupack.palletsortingapi.order.application.dto.UpdateDocumentWarehouseDto;
+import com.tupack.palletsortingapi.order.application.mapper.DocumentMapper;
 import com.tupack.palletsortingapi.order.application.mapper.WarehouseMapper;
+import com.tupack.palletsortingapi.order.domain.Document;
 import com.tupack.palletsortingapi.order.domain.Warehouse;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.DocumentRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.WarehouseRepository;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +26,8 @@ public class WarehouseService {
 
   private final WarehouseRepository warehouseRepository;
   private final WarehouseMapper warehouseMapper;
+  private final DocumentRepository documentRepository;
+  private final DocumentMapper documentMapper;
 
   @Transactional(readOnly = true)
   public GenericResponse getAllWarehouses() {
@@ -58,5 +68,40 @@ public class WarehouseService {
     }
     warehouseRepository.deleteById(id);
     return GenericResponse.success("Warehouse deleted successfully");
+  }
+
+  @Transactional(readOnly = true)
+  public GenericResponse getWarehouseDocuments(Long warehouseId) {
+    Warehouse warehouse = warehouseRepository.findById(warehouseId)
+        .orElseThrow(() -> new WarehouseNotFoundException(warehouseId));
+
+    var documents = warehouse.getDocuments().stream()
+        .map(documentMapper::toDto)
+        .collect(Collectors.toList());
+
+    return GenericResponse.success(documents);
+  }
+
+  public GenericResponse updateWarehouseDocuments(Long warehouseId, List<UpdateDocumentWarehouseDto> documentIds) {
+    Warehouse warehouse = warehouseRepository.findById(warehouseId)
+        .orElseThrow(() -> new WarehouseNotFoundException(warehouseId));
+
+    // Find all documents by IDs
+    Set<Document> documents = new LinkedHashSet<>();
+    for (UpdateDocumentWarehouseDto documentId : documentIds) {
+      Document document = documentRepository.findById(documentId.documentId())
+          .orElseThrow(() -> new DocumentNotFoundException(documentId.documentId()));
+      documents.add(document);
+    }
+
+    // Update the warehouse's documents
+    warehouse.setDocuments(documents);
+    Warehouse updated = warehouseRepository.save(warehouse);
+
+    var documentDtos = updated.getDocuments().stream()
+        .map(documentMapper::toDto)
+        .collect(Collectors.toList());
+
+    return GenericResponse.success(documentDtos);
   }
 }
