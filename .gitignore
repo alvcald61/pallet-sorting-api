@@ -36,3 +36,18 @@ build/
 .env
 application-local.yml
 **/application-local.yml
+*.log
+
+### Storage & Uploads ###
+uploads/
+logs/
+
+### Personal & Temporary Files ###
+*.pdf
+*.jpeg
+*.jpg
+*.png
+Bin-*
+hs_err_pid*.log
+nul
+*.tmp

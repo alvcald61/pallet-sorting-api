@@ -12,6 +12,7 @@ import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +22,7 @@ public class OrderStatusService {
   private final OrderRepository orderRepository;
   private final OrderStatusUpdateRepository orderStatusUpdateRepository;
 
+  @Transactional
   public GenericResponse updateOrderStatus(Long orderId, String status) {
     OrderStatus statusEnum = OrderStatus.valueOf(status);
     Order order = orderRepository.getOrderById(orderId)
@@ -35,6 +37,7 @@ public class OrderStatusService {
     return GenericResponse.success("Order status updated successfully");
   }
 
+  @Transactional
   public GenericResponse continueOrder(Long orderId, BigDecimal amount, String gpsLink,
       boolean denied) {
     Order order = orderRepository.getOrderById(orderId)

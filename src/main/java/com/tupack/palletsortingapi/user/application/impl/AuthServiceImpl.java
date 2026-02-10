@@ -24,6 +24,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -38,6 +39,7 @@ public class AuthServiceImpl implements AuthService {
   private final AuthenticationManager authManager;
   private final JwtService jwtService;
 
+  @Transactional
   @Override
   public AuthResponse register(RegisterRequest request) {
     if (userRepository.existsByEmail(request.getEmail())) {
@@ -54,6 +56,7 @@ public class AuthServiceImpl implements AuthService {
     return buildTokensFor(user);
   }
 
+  @Transactional(readOnly = true)
   @Override
   public AuthResponse login(LoginRequest request) {
     UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
@@ -65,6 +68,7 @@ public class AuthServiceImpl implements AuthService {
     return buildTokensFor(user);
   }
 
+  @Transactional(readOnly = true)
   @Override
   public AuthResponse refresh(String refreshToken) {
     String email = jwtService.extractSubject(refreshToken);

@@ -9,10 +9,13 @@ import com.tupack.palletsortingapi.order.domain.Truck;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.TruckRepository;
 import com.tupack.palletsortingapi.user.domain.Driver;
 import com.tupack.palletsortingapi.user.infrastructure.outbound.database.DriverRepository;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@RequiredArgsConstructor
 @Slf4j
 public class TruckService {
 
@@ -20,25 +23,21 @@ public class TruckService {
   private final TruckMapper truckMapper;
   private final DriverRepository driverRepository;
 
-  public TruckService(TruckRepository truckRepository, TruckMapper truckMapper,
-      DriverRepository driverRepository) {
-    this.truckRepository = truckRepository;
-    this.truckMapper = truckMapper;
-    this.driverRepository = driverRepository;
-  }
-
+  @Transactional(readOnly = true)
   public GenericResponse getAllTrucks() {
     var trucks = truckRepository.findAllByEnabled(true).stream().map(truckMapper::toDto).toList();
 
     return GenericResponse.success(trucks);
   }
 
+  @Transactional(readOnly = true)
   public GenericResponse getTruckById(Long id) {
     var truck = truckRepository.findById(id).map(truckMapper::toDto);
     return truck.map(GenericResponse::success)
         .orElseThrow(() -> new TruckNotFoundException(id));
   }
 
+  @Transactional
   public GenericResponse createTruck(TruckDto truckDTO) {
     Driver driver = driverRepository.findById(truckDTO.getDriverId())
         .orElseThrow(() -> new DriverNotFoundException(truckDTO.getDriverId()));
@@ -49,6 +48,7 @@ public class TruckService {
     return GenericResponse.success(truckMapper.toDto(saved));
   }
 
+  @Transactional
   public GenericResponse updateTruck(Long id, TruckDto truckDTO) {
     return truckRepository.findById(id).map(truck -> {
       truckMapper.updateEntity(truckDTO, truck);
@@ -66,6 +66,7 @@ public class TruckService {
     }
   }
 
+  @Transactional
   public GenericResponse deleteTruck(Long id) {
     return truckRepository.findById(id).map(truck -> {
       truck.setEnabled(false);

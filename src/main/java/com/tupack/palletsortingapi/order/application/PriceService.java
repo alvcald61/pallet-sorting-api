@@ -14,6 +14,7 @@ import com.tupack.palletsortingapi.order.infrastructure.outbound.database.PriceR
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +27,7 @@ public class PriceService {
   private final PriceDtoMapper priceDtoMapper;
   private final PriceRepository priceRepository;
 
+  @Transactional
   public GenericResponse createPrice(final PriceDto priceDto) {
     PriceCondition priceCondition = priceConditionDtoMapper.toEntity(priceDto.getPriceCondition());
     priceCondition = priceConditionRepository.save(priceCondition);
