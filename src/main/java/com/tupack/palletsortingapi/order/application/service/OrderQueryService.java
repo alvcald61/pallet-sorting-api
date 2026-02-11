@@ -23,6 +23,7 @@ import com.tupack.palletsortingapi.order.domain.Truck;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.BulkRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderPalletRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderSpecification;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderStatusUpdateRepository;
 import com.tupack.palletsortingapi.user.application.mapper.DriverMapper;
 import com.tupack.palletsortingapi.user.domain.Client;
@@ -44,6 +45,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContext;
@@ -88,22 +90,43 @@ public class OrderQueryService {
     }
   }
 
-  public GenericResponse getAllOrders(Pageable pageable) {
+  public GenericResponse getAllOrders(Pageable pageable, String search, List<String> statuses,
+      String orderType, String pickupDateFrom, String pickupDateTo) {
     Client client = getLoggedInClient();
     User user = getLoggedUser();
-    Page<Order> orders;
 
     String roleName = client.getUser().getRoles().stream()
         .findFirst()
         .orElseThrow(() -> new NoRoleAssignedException(client.getUser().getId()))
         .getName();
 
-    orders = switch (roleName) {
-      case "ADMIN" -> orderRepository.findAll(pageable);
-      case "CLIENT" -> orderRepository.getAllByClientId(client.getId(), pageable);
-      case "DRIVER" -> orderRepository.getAllByDriverId(user.getId(), pageable);
+    // Determine client/driver ID based on role
+    Long clientId = null;
+    Long driverId = null;
+
+    switch (roleName) {
+      case "CLIENT" -> clientId = client.getId();
+      case "DRIVER" -> driverId = user.getId();
+      case "ADMIN" -> {
+        // ADMIN can see all orders, no additional filter needed
+      }
       default -> throw new BusinessException("Invalid role: " + roleName, "INVALID_ROLE");
-    };
+    }
+
+    // Build specification with all filters
+    Specification<Order> specification = OrderSpecification.buildSpecification(
+        search,
+        statuses,
+        orderType,
+        pickupDateFrom,
+        pickupDateTo,
+        clientId,
+        driverId
+    );
+
+    // Execute query with filters
+    Page<Order> orders = orderRepository.findAll(specification, pageable);
+
     GenericResponse response = new GenericResponse();
     response.setPageInfo(getPageInfo(orders));
     response.setData(orders.get().map(orderMapper::toDto));

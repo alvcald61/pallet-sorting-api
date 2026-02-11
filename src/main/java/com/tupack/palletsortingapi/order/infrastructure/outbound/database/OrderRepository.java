@@ -16,10 +16,11 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-public interface OrderRepository extends JpaRepository<Order, Long> {
+public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecificationExecutor<Order> {
   @Query("select count(o) > 0 from Order o where o.truck = :truck "
       + "and o.pickupDate <= :endDate and o.projectedDeliveryDate >= :startDate")
   Boolean existsOverlappingOrder(@Param("startDate") LocalDateTime startDate,

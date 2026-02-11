@@ -12,6 +12,7 @@ import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderR
 import com.tupack.palletsortingapi.order.infrastructure.outbound.storage.LocalFileUploader;
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -29,7 +30,7 @@ public class OrderDocumentService {
   public List<OrderDocument> createDocumentOrder(Order order) {
     return order.getWarehouse().getDocuments().stream().map(warehouseDocument -> new OrderDocument(
         new OrderDocumentId(order.getId(), warehouseDocument.getDocumentId()), warehouseDocument,
-        order, null)).toList();
+        order, null)).collect(Collectors.toList());
   }
 
   public GenericResponse uploadDocument(Long documentId, Long orderId, MultipartFile file) {
