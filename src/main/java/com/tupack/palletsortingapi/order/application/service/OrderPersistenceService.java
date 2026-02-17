@@ -1,5 +1,6 @@
 package com.tupack.palletsortingapi.order.application.service;
 
+import com.tupack.palletsortingapi.notification.domain.event.OrderCreatedEvent;
 import com.tupack.palletsortingapi.order.application.dto.PalletBulkDto;
 import com.tupack.palletsortingapi.order.application.dto.SolvePackingRequest;
 import com.tupack.palletsortingapi.order.domain.Bulk;
@@ -15,6 +16,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,7 @@ public class OrderPersistenceService {
   private final BulkRepository bulkRepository;
   private final PalletRepository palletRepository;
   private final OrderStatusService orderStatusService;
+  private final ApplicationEventPublisher eventPublisher;
 
   /**
    * Persist order and all related entities (pallets or bulks)
@@ -54,6 +57,10 @@ public class OrderPersistenceService {
     } else {
       savePallets(request, savedOrder);
     }
+
+    // Publish OrderCreatedEvent
+    eventPublisher.publishEvent(new OrderCreatedEvent(this, savedOrder));
+    log.info("Published OrderCreatedEvent for order: {}", savedOrder.getId());
 
     return savedOrder;
   }

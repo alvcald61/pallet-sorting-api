@@ -1,12 +1,20 @@
 package com.tupack.palletsortingapi.common.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.util.List;
 
 @Data
-public class PageResponse {
-  private Integer pageNumber;
-  private Integer pageSize;
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class PageResponse<T> {
+  private List<T> data;
   private Long totalElements;
   private Integer totalPages;
-
+  private Integer currentPage;
+  private Integer pageSize;
 }

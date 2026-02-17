@@ -74,7 +74,7 @@ public class OrderSchedulingService {
 
     // Step 6: Assign truck and initialize transport tracking
     truckSelectionService.assignTruckToOrder(truck, savedOrder);
-    savedOrder.setTransportStatus(TransportStatus.TRUCK_ASSIGNED);
+    savedOrder.setTransportStatus(TransportStatus.PENDING);
     transportStatusService.initializeTransportStatus(savedOrder);
 
     // Step 7: Build and return response

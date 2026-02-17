@@ -52,7 +52,8 @@ public class OrderService {
     return queryService.getAvailableTimeSlots(date);
   }
 
-  public GenericResponse getAllOrders(Pageable pageable, String search, List<String> statuses,
+  public GenericResponse getAllOrders(Pageable pageable, String search,
+      List<String> statuses,
       String orderType, String pickupDateFrom, String pickupDateTo) {
     return queryService.getAllOrders(pageable, search, statuses, orderType, pickupDateFrom, pickupDateTo);
   }

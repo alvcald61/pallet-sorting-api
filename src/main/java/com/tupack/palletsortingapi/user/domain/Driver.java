@@ -1,5 +1,6 @@
 package com.tupack.palletsortingapi.user.domain;
 
+import com.tupack.palletsortingapi.order.domain.Truck;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -36,6 +37,8 @@ public class Driver{
   private User user;
   private String dni;
   private String phone;
+  @OneToOne
+  private Truck truck;
 
 
   @PrePersist

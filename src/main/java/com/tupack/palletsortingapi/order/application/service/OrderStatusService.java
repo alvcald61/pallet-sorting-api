@@ -3,6 +3,7 @@ package com.tupack.palletsortingapi.order.application.service;
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.common.exception.InvalidOrderStateException;
 import com.tupack.palletsortingapi.common.exception.OrderNotFoundException;
+import com.tupack.palletsortingapi.notification.domain.event.OrderStatusChangedEvent;
 import com.tupack.palletsortingapi.order.domain.Order;
 import com.tupack.palletsortingapi.order.domain.OrderStatusUpdate;
 import com.tupack.palletsortingapi.order.domain.enums.OrderStatus;
@@ -11,6 +12,7 @@ import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderS
 import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +23,7 @@ public class OrderStatusService {
 
   private final OrderRepository orderRepository;
   private final OrderStatusUpdateRepository orderStatusUpdateRepository;
+  private final ApplicationEventPublisher eventPublisher;
 
   @Transactional
   public GenericResponse updateOrderStatus(Long orderId, String status) {
@@ -31,9 +34,15 @@ public class OrderStatusService {
         .equals(OrderStatus.DENIED)) {
       throw new InvalidOrderStateException(order.getOrderStatus());
     }
+    OrderStatus oldStatus = order.getOrderStatus();
     order.setOrderStatus(statusEnum);
     orderRepository.save(order);
     recordStatus(order);
+
+    // Publish OrderStatusChangedEvent
+    eventPublisher.publishEvent(new OrderStatusChangedEvent(this, order, oldStatus, statusEnum));
+    log.info("Published OrderStatusChangedEvent for order: {} from {} to {}", orderId, oldStatus, statusEnum);
+
     return GenericResponse.success("Order status updated successfully");
   }
 
@@ -81,6 +90,10 @@ public class OrderStatusService {
     orderRepository.save(order);
     if (!previousStatus.equals(order.getOrderStatus())) {
       recordStatus(order);
+
+      // Publish OrderStatusChangedEvent
+      eventPublisher.publishEvent(new OrderStatusChangedEvent(this, order, previousStatus, order.getOrderStatus()));
+      log.info("Published OrderStatusChangedEvent for order: {} from {} to {}", orderId, previousStatus, order.getOrderStatus());
     }
     return GenericResponse.success("Order status updated successfully");
   }

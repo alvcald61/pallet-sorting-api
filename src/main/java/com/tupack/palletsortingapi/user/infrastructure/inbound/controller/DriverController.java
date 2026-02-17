@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RequestMapping("/api/driver")
@@ -30,8 +31,15 @@ public class DriverController {
    * @return GenericResponse with list of all active drivers
    */
   @GetMapping
-  public ResponseEntity<GenericResponse> getAllDrivers() {
-    GenericResponse response = driverService.getAllDrivers();
+  public ResponseEntity<GenericResponse> getAllDrivers(@RequestParam(required = false) String status) {
+    GenericResponse response = driverService.getAllDrivers(status);
+    return ResponseEntity.ok(response);
+  }
+
+
+  @GetMapping("/not-assigned")
+  public ResponseEntity<GenericResponse> getAllNotAssignedDrivers() {
+    GenericResponse response = driverService.getAllNotAssignedDrivers();
     return ResponseEntity.ok(response);
   }
 

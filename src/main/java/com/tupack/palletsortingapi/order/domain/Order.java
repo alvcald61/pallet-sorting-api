@@ -53,6 +53,7 @@ public class Order extends BaseEntity {
   @Column(columnDefinition = "TEXT")
   private String solution;
   @Enumerated(EnumType.STRING)
+  @Column(length = 20)
   private OrderStatus orderStatus;
 
   @Enumerated(EnumType.STRING)

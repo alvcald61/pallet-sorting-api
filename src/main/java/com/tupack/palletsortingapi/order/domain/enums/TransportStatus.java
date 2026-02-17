@@ -9,7 +9,7 @@ import lombok.Getter;
 @Getter
 public enum TransportStatus {
   PENDING("Pendiente", "Transport not yet started"),
-  TRUCK_ASSIGNED("Camión Asignado", "Truck has been assigned to the order"),
+//  TRUCK_ASSIGNED("Camión Asignado", "Truck has been assigned to the order"),
   EN_ROUTE_TO_WAREHOUSE("Camino al Almacén", "Truck is traveling to pickup warehouse"),
   ARRIVED_AT_WAREHOUSE("Llegó al Almacén", "Truck arrived at warehouse"),
   LOADING("Cargando", "Cargo is being loaded onto the truck"),
@@ -54,8 +54,8 @@ public enum TransportStatus {
    */
   public TransportStatus[] getValidNextStates() {
     return switch (this) {
-      case PENDING -> new TransportStatus[]{TRUCK_ASSIGNED};
-      case TRUCK_ASSIGNED -> new TransportStatus[]{EN_ROUTE_TO_WAREHOUSE};
+      case PENDING -> new TransportStatus[]{EN_ROUTE_TO_WAREHOUSE};
+//      case TRUCK_ASSIGNED -> new TransportStatus[]{EN_ROUTE_TO_WAREHOUSE};
       case EN_ROUTE_TO_WAREHOUSE -> new TransportStatus[]{ARRIVED_AT_WAREHOUSE};
       case ARRIVED_AT_WAREHOUSE -> new TransportStatus[]{LOADING};
       case LOADING -> new TransportStatus[]{LOADING_COMPLETED};

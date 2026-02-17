@@ -45,6 +45,8 @@ public class TruckService {
     truck.setDriver(driver);
     truck.setEnabled(true);
     Truck saved = truckRepository.save(truck);
+    driver.setTruck(saved);
+    driverRepository.save(driver);
     return GenericResponse.success(truckMapper.toDto(saved));
   }
 

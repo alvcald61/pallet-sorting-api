@@ -9,3 +9,6 @@ application:
     base-path: ${STORAGE_PATH:./uploads}
     allowed-extensions: pdf,jpg,jpeg,png,doc,docx
     max-file-size: 10485760  # 10MB in bytes
+  onesignal:
+    app-id: ${ONESIGNAL_APP_ID:cc79af88-2135-4f63-a116-8587053ed0a9}
+    rest-api-key: ${ONESIGNAL_REST_API_KEY:}

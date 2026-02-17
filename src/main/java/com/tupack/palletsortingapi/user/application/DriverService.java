@@ -36,8 +36,15 @@ public class DriverService {
   /**
    * Get all active drivers
    */
-  public GenericResponse getAllDrivers() {
+  public GenericResponse getAllDrivers(String status) {
     var data = driverRepository.findAllByEnabled(true).stream().map(driverMapper::toDto)
+        .collect(Collectors.toList());
+    log.info("Retrieved {} active drivers", data.size());
+    return GenericResponse.success(data);
+  }
+
+  public GenericResponse getAllNotAssignedDrivers() {
+    var data = driverRepository.findAllByTruckNull().stream().map(driverMapper::toDto)
         .collect(Collectors.toList());
     log.info("Retrieved {} active drivers", data.size());
     return GenericResponse.success(data);
