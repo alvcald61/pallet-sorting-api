@@ -3,6 +3,7 @@ package com.tupack.palletsortingapi.order.application.service;
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.common.exception.BusinessException;
 import com.tupack.palletsortingapi.common.exception.OrderNotFoundException;
+import com.tupack.palletsortingapi.notification.domain.event.TransportStatusUpdatedEvent;
 import com.tupack.palletsortingapi.order.application.mapper.TransportStatusUpdateMapper;
 import com.tupack.palletsortingapi.order.domain.Order;
 import com.tupack.palletsortingapi.order.domain.TransportStatusUpdate;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,6 +33,7 @@ public class TransportStatusService {
     private final OrderRepository orderRepository;
     private final TransportStatusUpdateRepository transportStatusUpdateRepository;
     private final TransportStatusUpdateMapper transportStatusUpdateMapper;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * Update transport status with basic information
@@ -86,6 +89,8 @@ public class TransportStatusService {
         }
 
         orderRepository.save(order);
+
+        eventPublisher.publishEvent(new TransportStatusUpdatedEvent(this, order, newStatus));
 
         return GenericResponse.success(
             "Transport status updated successfully to: " + newStatus.getDisplayName());

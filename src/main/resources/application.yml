@@ -11,4 +11,4 @@ application:
     max-file-size: 10485760  # 10MB in bytes
   onesignal:
     app-id: ${ONESIGNAL_APP_ID:cc79af88-2135-4f63-a116-8587053ed0a9}
-    rest-api-key: ${ONESIGNAL_REST_API_KEY:}
+    rest-api-key: ${ONESIGNAL_REST_API_KEY:os_v2_app_zr427cbbgvhwhiiwqwdqkpwqve7puwfjatwethuvcgpqmhjkhrtgm7z4q7h5youxsz7cxwql6ytnmtfsxvkfqyxi5fez3gufalt6bry}

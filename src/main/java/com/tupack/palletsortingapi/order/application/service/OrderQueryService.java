@@ -200,9 +200,9 @@ public class OrderQueryService {
         .orElseThrow(() -> new ClientNotFoundException("userId", user.getId()));
   }
 
-  private PageResponse getPageInfo(Page<Order> orders) {
-    PageResponse pageInfo = new PageResponse();
-    pageInfo.setPageNumber(orders.getNumber());
+  private PageResponse<Order> getPageInfo(Page<Order> orders) {
+    PageResponse<Order> pageInfo = new PageResponse<>();
+    pageInfo.setCurrentPage(orders.getNumber());
     pageInfo.setPageSize(orders.getSize());
     pageInfo.setTotalElements(orders.getTotalElements());
     pageInfo.setTotalPages(orders.getTotalPages());
