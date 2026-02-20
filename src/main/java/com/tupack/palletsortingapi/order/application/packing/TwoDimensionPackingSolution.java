@@ -2,15 +2,15 @@ package com.tupack.palletsortingapi.order.application.packing;
 
 import com.tupack.palletsortingapi.common.exception.BusinessException;
 import com.tupack.palletsortingapi.common.exception.NoTruckAvailableException;
-import com.tupack.palletsortingapi.common.exception.ZoneNotFoundException;
 import com.tupack.palletsortingapi.order.application.dto.AddressDto;
+import com.tupack.palletsortingapi.order.application.dto.PalletBulkDto;
+import com.tupack.palletsortingapi.order.application.dto.SolutionDto;
+import com.tupack.palletsortingapi.order.application.dto.SolvePackingRequest;
+import com.tupack.palletsortingapi.order.application.service.ZoneResolverService;
 import com.tupack.palletsortingapi.order.domain.Truck;
 import com.tupack.palletsortingapi.order.domain.Zone;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.TruckRepository;
-import com.tupack.palletsortingapi.order.application.dto.PalletBulkDto;
-import com.tupack.palletsortingapi.order.application.dto.SolutionDto;
-import com.tupack.palletsortingapi.order.application.dto.SolvePackingRequest;
 import com.tupack.palletsortingapi.utils.SolutionUtils;
 import java.awt.Dimension;
 import java.awt.Rectangle;
@@ -19,7 +19,6 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.packing.core.Bin;
 import org.packing.core.BinPacking;
@@ -38,7 +37,7 @@ public class TwoDimensionPackingSolution implements Strategy {
 
   private final TruckRepository truckRepository;
   private final OrderRepository orderRepository;
-  private final Map<String, List<Zone>> zoneMap;
+  private final ZoneResolverService zoneResolverService;
 
   @Override
   public SolutionDto execute(SolvePackingRequest request) throws IOException {
@@ -62,14 +61,11 @@ public class TwoDimensionPackingSolution implements Strategy {
       Dimension truckDimension =
           new Dimension((int) ((truck.getWidth() - RIGHT_PADDING - LEFT_PADDING) * FACTOR),
               (int) ((truck.getLength() - BOTTOM_PADDING - TOP_PADDING) * FACTOR));
-      //      Dimension viewPort = getViewPort(new Dimension((int) ((truck.getWidth()) * FACTOR),
-      //              (int) ((truck.getLength()) * FACTOR)));
       Bin[] bins = BinPacking.BinPackingStrategy(pieces.toArray(new MArea[0]), truckDimension,
           truckDimension);
       if (bins.length > 1) {
         continue;
       }
-      //      bins[0].getPlacedPieces()[0].getBoundingBox2D()
       var resultPng = SolutionUtils.drawbinToFile(bins, truckDimension);
       var resultTxt = SolutionUtils.createOutputFiles(bins);
       return SolutionDto.builder().truckId(truck.getId()).truck(truck)
@@ -94,7 +90,6 @@ public class TwoDimensionPackingSolution implements Strategy {
         pieces.add(new MArea(new Rectangle(0, 0, (int) (palletBulkDto.getWidth() * FACTOR),
             (int) (palletBulkDto.getLength() * FACTOR)), ++i));
       }
-
     }
     return pieces;
   }
@@ -134,34 +129,12 @@ public class TwoDimensionPackingSolution implements Strategy {
     if (toAddress == null) {
       throw new BusinessException("Delivery address is required", "DELIVERY_ADDRESS_REQUIRED");
     }
-    List<Zone> stateZone = zoneMap.get(toAddress.state().toLowerCase());
-    if (stateZone == null || stateZone.isEmpty()) {
-      throw new ZoneNotFoundException("No zone found for state: " + toAddress.state());
-    }
-    List<Zone> cityZone =
-        stateZone.stream().filter(zone -> zone.getCity().equalsIgnoreCase(toAddress.city()))
-            .toList();
-    return cityZone.stream().filter(zone -> hasDistrict(zone, toAddress)).findFirst().orElseGet(
-        () -> cityZone.stream().filter(zone -> zone.getDistrict().equalsIgnoreCase("*")).findFirst()
-            .orElseThrow(() -> new ZoneNotFoundException(
-                "No zone found for district: " + toAddress.district() + " in city: " + toAddress
-                    .city())));
-  }
-
-  private boolean hasDistrict(Zone zone, AddressDto toAddress) {
-    String[] districts = zone.getDistrict().split(",");
-    for (String district : districts) {
-      if (district.trim().equalsIgnoreCase(toAddress.district().trim())) {
-        return true;
-      }
-    }
-    return false;
+    return zoneResolverService.resolveZone(toAddress);
   }
 
   private Double getTotalArea(SolvePackingRequest request) {
     return request.getPallets().stream()
         .mapToDouble(pallet -> pallet.getWidth() * pallet.getLength() * pallet.getQuantity()).sum();
-
   }
 
   private Double getTotalWeight(SolvePackingRequest request) {

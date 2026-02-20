@@ -11,6 +11,8 @@ import com.tupack.palletsortingapi.order.domain.Zone;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.ZoneRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.PriceConditionRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.PriceRepository;
+import jakarta.persistence.EntityNotFoundException;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,16 +29,80 @@ public class PriceService {
   private final PriceDtoMapper priceDtoMapper;
   private final PriceRepository priceRepository;
 
+  public GenericResponse getAllPrices() {
+    List<PriceDto> prices = priceRepository.findAllByEnabled(true)
+        .stream()
+        .map(priceDtoMapper::toDto)
+        .toList();
+    return GenericResponse.success(prices);
+  }
+
+  public GenericResponse getPriceById(Long id) {
+    Price price = priceRepository.findById(id)
+        .orElseThrow(() -> new EntityNotFoundException("Precio no encontrado con id: " + id));
+    return GenericResponse.success(priceDtoMapper.toDto(price));
+  }
+
   @Transactional
   public GenericResponse createPrice(final PriceDto priceDto) {
-    PriceCondition priceCondition = priceConditionDtoMapper.toEntity(priceDto.getPriceCondition());
-    priceCondition = priceConditionRepository.save(priceCondition);
+    PriceCondition priceCondition;
+    // Si viene un ID de condición existente, reutilizarla
+    if (priceDto.getPriceCondition() != null
+        && priceDto.getPriceCondition().getPriceConditionId() != null) {
+      priceCondition = priceConditionRepository
+          .findById(priceDto.getPriceCondition().getPriceConditionId())
+          .orElseThrow(() -> new EntityNotFoundException(
+              "Condición de precio no encontrada con id: "
+                  + priceDto.getPriceCondition().getPriceConditionId()));
+    } else {
+      // Crear nueva condición si no viene ID
+      priceCondition = priceConditionDtoMapper.toEntity(priceDto.getPriceCondition());
+      priceCondition = priceConditionRepository.save(priceCondition);
+    }
+
     Zone zone = zoneRepository.findById(priceDto.getZone().getId())
         .orElseThrow(() -> new ZoneNotFoundException(priceDto.getZone().getId()));
+
     Price price = priceDtoMapper.toEntity(priceDto);
     price.setPriceCondition(priceCondition);
     price.setZone(zone);
     price = priceRepository.save(price);
-    return GenericResponse.success( priceDtoMapper.toDto(price));
+    return GenericResponse.success(priceDtoMapper.toDto(price));
+  }
+
+  @Transactional
+  public GenericResponse updatePrice(Long id, PriceDto priceDto) {
+    Price price = priceRepository.findById(id)
+        .orElseThrow(() -> new EntityNotFoundException("Precio no encontrado con id: " + id));
+
+    price.setPrice(priceDto.getPrice());
+
+    if (priceDto.getZone() != null && priceDto.getZone().getId() != null) {
+      Zone zone = zoneRepository.findById(priceDto.getZone().getId())
+          .orElseThrow(() -> new ZoneNotFoundException(priceDto.getZone().getId()));
+      price.setZone(zone);
+    }
+
+    if (priceDto.getPriceCondition() != null
+        && priceDto.getPriceCondition().getPriceConditionId() != null) {
+      PriceCondition condition = priceConditionRepository
+          .findById(priceDto.getPriceCondition().getPriceConditionId())
+          .orElseThrow(() -> new EntityNotFoundException(
+              "Condición de precio no encontrada con id: "
+                  + priceDto.getPriceCondition().getPriceConditionId()));
+      price.setPriceCondition(condition);
+    }
+
+    price = priceRepository.save(price);
+    return GenericResponse.success(priceDtoMapper.toDto(price));
+  }
+
+  @Transactional
+  public GenericResponse deletePrice(Long id) {
+    Price price = priceRepository.findById(id)
+        .orElseThrow(() -> new EntityNotFoundException("Precio no encontrado con id: " + id));
+    price.setEnabled(false);
+    priceRepository.save(price);
+    return GenericResponse.success(null, "Precio deshabilitado correctamente");
   }
 }

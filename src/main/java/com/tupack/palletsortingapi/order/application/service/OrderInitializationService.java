@@ -115,6 +115,7 @@ public class OrderInitializationService {
    */
   private Warehouse resolveWarehouse(SolvePackingRequest request) {
     Long warehouseId = request.getFromAddress().warehouseId();
+//    warehouseId = 2;
     return warehouseRepository.findById(warehouseId)
         .orElseThrow(() -> new WarehouseNotFoundException(warehouseId));
   }

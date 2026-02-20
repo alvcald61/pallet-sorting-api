@@ -1,8 +1,8 @@
 package com.tupack.palletsortingapi.order.infrastructure.inbound.controller;
 
-import com.tupack.palletsortingapi.order.application.PriceService;
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
-import com.tupack.palletsortingapi.order.application.dto.PriceDto;
+import com.tupack.palletsortingapi.order.application.ZoneManagementService;
+import com.tupack.palletsortingapi.order.application.dto.ZoneDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -15,35 +15,35 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/price")
+@RequestMapping("/api/zone")
 @RequiredArgsConstructor
 @Slf4j
-class PriceController {
+class ZoneController {
 
-  private final PriceService priceService;
+  private final ZoneManagementService zoneManagementService;
 
   @GetMapping
-  public GenericResponse getAllPrices() {
-    return priceService.getAllPrices();
+  public GenericResponse getAllZones() {
+    return zoneManagementService.getAllZones();
   }
 
   @GetMapping("/{id}")
-  public GenericResponse getPriceById(@PathVariable Long id) {
-    return priceService.getPriceById(id);
+  public GenericResponse getZoneById(@PathVariable Long id) {
+    return zoneManagementService.getZoneById(id);
   }
 
   @PostMapping
-  public GenericResponse createPrice(@RequestBody PriceDto priceDto) {
-    return priceService.createPrice(priceDto);
+  public GenericResponse createZone(@RequestBody ZoneDto dto) {
+    return zoneManagementService.createZone(dto);
   }
 
   @PutMapping("/{id}")
-  public GenericResponse updatePrice(@PathVariable Long id, @RequestBody PriceDto priceDto) {
-    return priceService.updatePrice(id, priceDto);
+  public GenericResponse updateZone(@PathVariable Long id, @RequestBody ZoneDto dto) {
+    return zoneManagementService.updateZone(id, dto);
   }
 
   @DeleteMapping("/{id}")
-  public GenericResponse deletePrice(@PathVariable Long id) {
-    return priceService.deletePrice(id);
+  public GenericResponse deleteZone(@PathVariable Long id) {
+    return zoneManagementService.deleteZone(id);
   }
 }

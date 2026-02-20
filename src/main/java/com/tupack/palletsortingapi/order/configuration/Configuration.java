@@ -1,24 +1,10 @@
 package com.tupack.palletsortingapi.order.configuration;
 
-import com.tupack.palletsortingapi.order.domain.Zone;
-import com.tupack.palletsortingapi.order.infrastructure.outbound.database.ZoneRepository;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
-import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-@RequiredArgsConstructor
-@org.springframework.context.annotation.Configuration
+@Configuration
 public class Configuration {
-
-  private final ZoneRepository zoneRepository;
-
-  @Bean
-  public Map<String, List<Zone>> zoneCostPerKmMap() {
-    return zoneRepository.findAllByEnabled(true).stream().collect(
-        Collectors.groupingBy(zone -> zone.getState().toLowerCase(),
-            Collectors.mapping(zone -> zone, Collectors.toList())));
-  }
-
+  // Zone lookup is handled dynamically via ZoneRepository (see ZoneResolverService).
+  // The static zone map was removed to ensure changes made through the management API
+  // are reflected immediately without requiring a server restart.
 }

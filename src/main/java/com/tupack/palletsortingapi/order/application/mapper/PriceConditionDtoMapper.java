@@ -9,4 +9,5 @@ import org.mapstruct.ReportingPolicy;
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = ComponentModel.SPRING)
 public interface PriceConditionDtoMapper {
   PriceCondition toEntity(PriceConditionDto priceConditionDto);
+  PriceConditionDto toDto(PriceCondition priceCondition);
 }

@@ -5,7 +5,6 @@ import com.tupack.palletsortingapi.order.application.dto.AddressDto;
 import com.tupack.palletsortingapi.order.domain.Zone;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.ZoneRepository;
 import java.util.List;
-import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -13,6 +12,7 @@ import org.springframework.stereotype.Service;
 /**
  * Service responsible for resolving zones based on address information.
  * Centralizes zone lookup logic to avoid duplication.
+ * Queries the database directly so changes via the management API are reflected immediately.
  */
 @Service
 @RequiredArgsConstructor
@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 public class ZoneResolverService {
 
   private final ZoneRepository zoneRepository;
-  private final Map<String, List<Zone>> zoneMap;
 
   /**
    * Resolve zone from address DTO
@@ -30,9 +29,10 @@ public class ZoneResolverService {
    * @throws ZoneNotFoundException if no zone found for the address
    */
   public Zone resolveZone(AddressDto addressDto) {
-    List<Zone> stateZones = zoneMap.get(addressDto.state().toLowerCase());
+    List<Zone> stateZones = zoneRepository.findByStateIgnoreCaseAndEnabled(
+        addressDto.state(), true);
 
-    if (stateZones == null || stateZones.isEmpty()) {
+    if (stateZones.isEmpty()) {
       throw new ZoneNotFoundException("No zone found for state: " + addressDto.state());
     }
 
@@ -45,7 +45,7 @@ public class ZoneResolverService {
           "No zone found for city: " + addressDto.city() + " in state: " + addressDto.state());
     }
 
-    // Try to find exact district match
+    // Try to find exact district match first
     return cityZones.stream()
         .filter(zone -> hasDistrict(zone, addressDto))
         .findFirst()
@@ -53,8 +53,8 @@ public class ZoneResolverService {
             .filter(zone -> zone.getDistrict().equalsIgnoreCase("*"))
             .findFirst()
             .orElseThrow(() -> new ZoneNotFoundException(
-                "No zone found for district: " + addressDto.district() + " in city: " + addressDto
-                    .city())));
+                "No zone found for district: " + addressDto.district() + " in city: "
+                    + addressDto.city())));
   }
 
   /**
@@ -69,12 +69,12 @@ public class ZoneResolverService {
   }
 
   /**
-   * Check if a zone covers the specified district
+   * Check if a zone covers the specified district (supports comma-separated district list)
    */
   private boolean hasDistrict(Zone zone, AddressDto addressDto) {
     String[] districts = zone.getDistrict().split(",");
-    for (String district : districts) {
-      if (district.trim().equalsIgnoreCase(addressDto.district().trim())) {
+    for (String d : districts) {
+      if (d.trim().equalsIgnoreCase(addressDto.district().trim())) {
         return true;
       }
     }
