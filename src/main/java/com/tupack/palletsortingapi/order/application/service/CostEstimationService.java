@@ -10,6 +10,8 @@ import com.tupack.palletsortingapi.order.domain.PriceCondition;
 import com.tupack.palletsortingapi.order.domain.Zone;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.PriceConditionRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.PriceRepository;
+import com.tupack.palletsortingapi.user.domain.Client;
+import com.tupack.palletsortingapi.user.infrastructure.outbound.database.ClientRepository;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -29,6 +31,7 @@ public class CostEstimationService {
   private final ZoneResolverService zoneResolverService;
   private final PriceConditionRepository priceConditionRepository;
   private final PriceRepository priceRepository;
+  private final ClientRepository clientRepository;
 
   private static final BigDecimal VOLUME_RATE = BigDecimal.valueOf(50); // $50 per m³
   private static final BigDecimal WEIGHT_RATE = BigDecimal.valueOf(0.10); // $0.10 per kg
@@ -89,8 +92,11 @@ public class CostEstimationService {
    */
   private BigDecimal calculateBaseCost(EstimateCostRequest request, Zone zone) {
     // For Lima deliveries, use existing pricing table
-    if (isLimaDelivery(request)) {
-      return calculateLimaPrice(request, zone);
+    if (isLimaDelivery(request) && request.getClientId() != null) {
+      Client client = clientRepository.findById(request.getClientId()).orElse(null);
+      if (client != null) {
+        return calculateLimaPrice(request, zone, client);
+      }
     }
 
     // For other zones, use formula-based calculation
@@ -104,7 +110,7 @@ public class CostEstimationService {
   /**
    * Calculate price for Lima deliveries using price table
    */
-  private BigDecimal calculateLimaPrice(EstimateCostRequest request, Zone zone) {
+  private BigDecimal calculateLimaPrice(EstimateCostRequest request, Zone zone, Client client) {
     try {
       PriceCondition matchCondition = priceConditionRepository
           .findByVolumeAndWeight(request.getTotalVolume(), request.getTotalWeight())
@@ -113,7 +119,7 @@ public class CostEstimationService {
                   request.getTotalVolume(), request.getTotalWeight()),
               "PRICE_CONDITION_NOT_FOUND"));
 
-      Price price = priceRepository.findByZoneAndPriceCondition(zone, matchCondition);
+      Price price = priceRepository.findByZoneAndPriceConditionAndClient(zone, matchCondition, client);
 
       if (price == null) {
         // If no exact price found, use formula-based calculation

@@ -76,7 +76,7 @@ public class OrderInitializationService {
 
     // Pricing (only for trusted clients)
     if (orderPricingService.shouldCalculatePrice(client.isTrust())) {
-      BigDecimal amount = orderPricingService.calculateOrderAmount(request, zone);
+      BigDecimal amount = orderPricingService.calculateOrderAmount(request, zone, client);
       order.setAmount(amount);
     }
 

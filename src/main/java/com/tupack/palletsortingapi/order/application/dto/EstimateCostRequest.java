@@ -30,6 +30,8 @@ public class EstimateCostRequest {
   @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
   private LocalDate pickupDate;
 
+  private Long clientId;
+
   public Double getTotalVolume() {
     return items.stream()
         .mapToDouble(item -> item.getVolume() * item.getQuantity())

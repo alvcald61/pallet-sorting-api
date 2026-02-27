@@ -1,5 +1,6 @@
 package com.tupack.palletsortingapi.order.domain;
 
+import com.tupack.palletsortingapi.user.domain.Client;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -32,6 +33,8 @@ public class Price {
   private PriceCondition priceCondition;
   @ManyToOne
   private Zone zone;
+  @ManyToOne
+  private Client client;
   private BigDecimal price;
   private LocalDateTime createdAt;
   private LocalDateTime updatedAt;

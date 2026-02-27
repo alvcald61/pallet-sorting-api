@@ -8,9 +8,11 @@ import com.tupack.palletsortingapi.order.application.mapper.PriceDtoMapper;
 import com.tupack.palletsortingapi.order.domain.Price;
 import com.tupack.palletsortingapi.order.domain.PriceCondition;
 import com.tupack.palletsortingapi.order.domain.Zone;
+import com.tupack.palletsortingapi.user.domain.Client;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.ZoneRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.PriceConditionRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.PriceRepository;
+import com.tupack.palletsortingapi.user.infrastructure.outbound.database.ClientRepository;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -28,10 +30,16 @@ public class PriceService {
   private final ZoneRepository zoneRepository;
   private final PriceDtoMapper priceDtoMapper;
   private final PriceRepository priceRepository;
+  private final ClientRepository clientRepository;
 
-  public GenericResponse getAllPrices() {
-    List<PriceDto> prices = priceRepository.findAllByEnabled(true)
-        .stream()
+  public GenericResponse getAllPrices(Long clientId) {
+    List<Price> priceList;
+    if (clientId != null) {
+      priceList = priceRepository.findAllByEnabledAndClientId(true, clientId);
+    } else {
+      priceList = priceRepository.findAllByEnabled(true);
+    }
+    List<PriceDto> prices = priceList.stream()
         .map(priceDtoMapper::toDto)
         .toList();
     return GenericResponse.success(prices);
@@ -66,6 +74,14 @@ public class PriceService {
     Price price = priceDtoMapper.toEntity(priceDto);
     price.setPriceCondition(priceCondition);
     price.setZone(zone);
+
+    if (priceDto.getClientId() != null) {
+      Client client = clientRepository.findById(priceDto.getClientId())
+          .orElseThrow(() -> new EntityNotFoundException(
+              "Cliente no encontrado con id: " + priceDto.getClientId()));
+      price.setClient(client);
+    }
+
     price = priceRepository.save(price);
     return GenericResponse.success(priceDtoMapper.toDto(price));
   }
@@ -91,6 +107,13 @@ public class PriceService {
               "Condición de precio no encontrada con id: "
                   + priceDto.getPriceCondition().getPriceConditionId()));
       price.setPriceCondition(condition);
+    }
+
+    if (priceDto.getClientId() != null) {
+      Client client = clientRepository.findById(priceDto.getClientId())
+          .orElseThrow(() -> new EntityNotFoundException(
+              "Cliente no encontrado con id: " + priceDto.getClientId()));
+      price.setClient(client);
     }
 
     price = priceRepository.save(price);

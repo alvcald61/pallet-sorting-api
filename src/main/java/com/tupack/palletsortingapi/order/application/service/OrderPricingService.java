@@ -7,6 +7,7 @@ import com.tupack.palletsortingapi.order.domain.PriceCondition;
 import com.tupack.palletsortingapi.order.domain.Zone;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.PriceConditionRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.PriceRepository;
+import com.tupack.palletsortingapi.user.domain.Client;
 import java.math.BigDecimal;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,10 +32,10 @@ public class OrderPricingService {
    * @param zone    Destination zone
    * @return Calculated price or null if not applicable
    */
-  public BigDecimal calculateOrderAmount(SolvePackingRequest request, Zone zone) {
+  public BigDecimal calculateOrderAmount(SolvePackingRequest request, Zone zone, Client client) {
     // Special logic for Lima - puede extenderse a otras ciudades
     if (isLimaDelivery(request)) {
-      return calculateLimaPrice(request);
+      return calculateLimaPrice(request, client);
     }
 
     // Lógica general para otras zonas (puede implementarse después)
@@ -44,7 +45,7 @@ public class OrderPricingService {
   /**
    * Calculate price for Lima deliveries
    */
-  private BigDecimal calculateLimaPrice(SolvePackingRequest request) {
+  private BigDecimal calculateLimaPrice(SolvePackingRequest request, Client client) {
     Zone requestZone = zoneResolverService.resolveZoneByDistrict(
         request.getToAddress().district());
 
@@ -55,7 +56,7 @@ public class OrderPricingService {
                 request.getTotalVolume(), request.getTotalWeight()),
             "PRICE_CONDITION_NOT_FOUND"));
 
-    Price price = priceRepository.findByZoneAndPriceCondition(requestZone, matchCondition);
+    Price price = priceRepository.findByZoneAndPriceConditionAndClient(requestZone, matchCondition, client);
 
     if (price == null) {
       throw new BusinessException(
