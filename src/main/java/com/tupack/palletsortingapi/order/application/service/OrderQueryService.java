@@ -14,6 +14,7 @@ import com.tupack.palletsortingapi.order.application.mapper.BulkMapper;
 import com.tupack.palletsortingapi.order.application.mapper.OrderMapper;
 import com.tupack.palletsortingapi.order.application.mapper.OrderPalletMapper;
 import com.tupack.palletsortingapi.order.application.mapper.OrderStatusUpdateMapper;
+import com.tupack.palletsortingapi.order.application.mapper.DispatcherDtoMapper;
 import com.tupack.palletsortingapi.order.application.mapper.TruckMapper;
 import com.tupack.palletsortingapi.order.domain.Bulk;
 import com.tupack.palletsortingapi.order.domain.Order;
@@ -72,6 +73,7 @@ public class OrderQueryService {
   private final OrderPalletMapper orderPalletMapper;
   private final TruckMapper truckMapper;
   private final DriverMapper driverMapper;
+  private final DispatcherDtoMapper dispatcherDtoMapper;
   private final ClientRepository clientRepository;
 
   public List<String> getAvailableTimeSlots(String date) {
@@ -148,6 +150,9 @@ public class OrderQueryService {
     OrderDto orderDto = orderMapper.toDto(order);
     orderDto.setDocuments(documentDtoList);
     loadTruckAndDriver(orderDto, order);
+    if (order.getDispatcher() != null) {
+      orderDto.setDispatcher(dispatcherDtoMapper.toDto(order.getDispatcher()));
+    }
     orderDto.setPackages(palletBulkDtoList);
     return GenericResponse.success(orderDto);
   }

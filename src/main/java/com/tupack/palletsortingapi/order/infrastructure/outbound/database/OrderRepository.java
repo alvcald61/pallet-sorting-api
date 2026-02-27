@@ -33,7 +33,7 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
   @EntityGraph(attributePaths = {"truck", "truck.driver", "client", "warehouse"})
   Page<Order> getAllByClientId(Long clientId, Pageable pageable);
 
-  @EntityGraph(attributePaths = {"truck", "truck.driver", "client", "warehouse", "zone"})
+  @EntityGraph(attributePaths = {"truck", "truck.driver", "client", "warehouse", "zone", "dispatcher"})
   Optional<Order> getOrderById(Long id);
 
   @EntityGraph(attributePaths = {"truck", "truck.driver", "client", "warehouse"})

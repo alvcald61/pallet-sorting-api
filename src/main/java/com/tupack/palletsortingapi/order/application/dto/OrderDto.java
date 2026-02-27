@@ -43,5 +43,7 @@ public class OrderDto implements Serializable {
   private boolean isDocumentPending = true;
   private String transportStatus;
   private String sunatDocumentPath;
+  private DispatcherDto dispatcher;
+  private Long clientId;
 
 }

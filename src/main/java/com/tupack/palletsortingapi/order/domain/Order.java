@@ -78,6 +78,9 @@ public class Order extends BaseEntity {
 
   private String sunatDocumentPath;
 
+  @ManyToOne
+  @JoinColumn(name = "dispatcherId", nullable = true)
+  private Dispatcher dispatcher;
 
   @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<OrderDocument> document;

@@ -14,7 +14,7 @@ import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
 
-@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = ComponentModel.SPRING)
+@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = ComponentModel.SPRING, uses = DispatcherDtoMapper.class)
 public interface OrderMapper {
   Order toEntity(OrderDto orderDto);
 
@@ -22,6 +22,7 @@ public interface OrderMapper {
   @Mapping(source = "transportStatus", target = "transportStatus")
   @Mapping(source = "addressLink", target = "toAddressLink")
   @Mapping(source = "warehouse.locationLink", target = "fromAddressLink")
+  @Mapping(source = "client.id", target = "clientId")
   OrderDto toDto(Order order);
 
 

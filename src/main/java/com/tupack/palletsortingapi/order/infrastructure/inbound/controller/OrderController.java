@@ -1,5 +1,6 @@
 package com.tupack.palletsortingapi.order.infrastructure.inbound.controller;
 
+import com.tupack.palletsortingapi.order.application.DispatcherService;
 import com.tupack.palletsortingapi.order.application.OrderService;
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.order.application.dto.CreateOrderTemplateRequest;
@@ -45,6 +46,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class OrderController {
 
     private final OrderService orderService;
+    private final DispatcherService dispatcherService;
 
     @Operation(summary = "Schedule a new order", description = "Creates and schedules a new pallet order by solving the packing problem and assigning a truck")
     @PostMapping("/solve/{packingType}")
@@ -158,6 +160,12 @@ public class OrderController {
         OrderAnalysisResponse analysis = orderService.analyzeOrder(request);
         return ResponseEntity.ok(
             GenericResponse.builder().message("OK").statusCode(200).data(analysis).build());
+    }
+
+    @PatchMapping("/{orderId}/dispatcher/{dispatcherId}")
+    public GenericResponse assignDispatcherToOrder(@PathVariable Long orderId,
+        @PathVariable Long dispatcherId) {
+        return dispatcherService.assignDispatcherToOrder(orderId, dispatcherId);
     }
 
 }
