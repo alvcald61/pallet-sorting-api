@@ -92,4 +92,65 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
   List<Order> findByStatusInOrderByPickupDateAsc(
       @Param("statuses") List<OrderStatus> statuses,
       Pageable pageable);
+
+  // --- Dashboard date-filtered queries ---
+
+  @Query("SELECT COUNT(o) FROM Order o WHERE o.orderStatus IN :statuses AND o.pickupDate BETWEEN :startDate AND :endDate")
+  long countByStatusInAndDateRange(@Param("statuses") List<OrderStatus> statuses,
+      @Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+  @Query("SELECT COALESCE(SUM(o.amount), 0) FROM Order o WHERE o.pickupDate BETWEEN :startDate AND :endDate")
+  BigDecimal sumAllAmountsInDateRange(@Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate);
+
+  @Query("SELECT COALESCE(SUM(o.totalVolume), 0) FROM Order o WHERE o.pickupDate BETWEEN :startDate AND :endDate")
+  BigDecimal sumTotalVolumeInDateRange(@Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate);
+
+  @Query("SELECT COALESCE(SUM(o.totalWeight), 0) FROM Order o WHERE o.pickupDate BETWEEN :startDate AND :endDate")
+  BigDecimal sumTotalWeightInDateRange(@Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate);
+
+  @Query("SELECT new com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByStatusDTO(" +
+      "o.orderStatus, COUNT(o)) " +
+      "FROM Order o WHERE o.pickupDate BETWEEN :startDate AND :endDate GROUP BY o.orderStatus")
+  List<OrdersByStatusDTO> countOrdersByStatusInDateRange(@Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate);
+
+  @Query("SELECT new com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByClientDTO(" +
+      "CAST(c.id AS string), " +
+      "CONCAT(c.user.firstName, ' ', c.user.lastName), " +
+      "c.businessName, COUNT(o)) " +
+      "FROM Order o JOIN o.client c " +
+      "WHERE o.pickupDate BETWEEN :startDate AND :endDate " +
+      "GROUP BY c.id, c.user.firstName, c.user.lastName, c.businessName")
+  List<OrdersByClientDTO> countOrdersByClientInDateRange(@Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate);
+
+  @Query("SELECT new com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByDriverDTO(" +
+      "CAST(d.driverId AS string), " +
+      "CONCAT(d.user.firstName, ' ', d.user.lastName), " +
+      "CONCAT(d.user.firstName, ' ', d.user.lastName), COUNT(o)) " +
+      "FROM Order o JOIN o.truck t JOIN t.driver d " +
+      "WHERE t IS NOT NULL AND d IS NOT NULL AND o.pickupDate BETWEEN :startDate AND :endDate " +
+      "GROUP BY d.driverId, d.user.firstName, d.user.lastName")
+  List<OrdersByDriverDTO> countOrdersByDriverInDateRange(@Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate);
+
+  @Query("SELECT new com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByTruckDTO(" +
+      "CAST(t.id AS string), t.licensePlate, t.licensePlate, COUNT(o)) " +
+      "FROM Order o JOIN o.truck t " +
+      "WHERE t IS NOT NULL AND o.pickupDate BETWEEN :startDate AND :endDate " +
+      "GROUP BY t.id, t.licensePlate")
+  List<OrdersByTruckDTO> countOrdersByTruckInDateRange(@Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate);
+
+  @EntityGraph(attributePaths = {"client", "client.user"})
+  @Query("SELECT o FROM Order o WHERE o.orderStatus IN :statuses " +
+      "AND o.pickupDate BETWEEN :startDate AND :endDate ORDER BY o.pickupDate ASC")
+  List<Order> findByStatusInAndDateRangeOrderByPickupDateAsc(
+      @Param("statuses") List<OrderStatus> statuses,
+      @Param("startDate") LocalDateTime startDate,
+      @Param("endDate") LocalDateTime endDate,
+      Pageable pageable);
 }

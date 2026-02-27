@@ -10,8 +10,10 @@ import com.tupack.palletsortingapi.order.application.dto.dashboard.PendingOrderD
 import com.tupack.palletsortingapi.order.application.dto.dashboard.PerformanceMetricsDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.time.LocalDate;
 import java.util.List;
 
 @RestController
@@ -23,66 +25,75 @@ public class DashboardController {
     private final DashboardService dashboardService;
 
     /**
-     * GET /api/dashboard/stats
-     * Get general dashboard statistics
+     * GET /api/dashboard/stats?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+     * Get general dashboard statistics, optionally filtered by date range
      */
     @GetMapping("/stats")
-    public ResponseEntity<DashboardStatsDTO> getStats() {
-        return ResponseEntity.ok(dashboardService.getStats());
+    public ResponseEntity<DashboardStatsDTO> getStats(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(dashboardService.getStats(startDate, endDate));
     }
 
     /**
-     * GET /api/dashboard/pending-orders
-     * Get pending orders with optional limit parameter
+     * GET /api/dashboard/pending-orders?limit=10&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
+     * Get pending orders with optional limit and date range filter
      */
     @GetMapping("/pending-orders")
     public ResponseEntity<List<PendingOrderDTO>> getPendingOrders(
-            @RequestParam(name = "limit", required = false) Integer limit) {
-        return ResponseEntity.ok(dashboardService.getPendingOrders(limit));
+            @RequestParam(name = "limit", required = false) Integer limit,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(dashboardService.getPendingOrders(limit, startDate, endDate));
     }
 
     /**
-     * GET /api/dashboard/orders-by-client
-     * Get order count grouped by client
+     * GET /api/dashboard/orders-by-client?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
      */
     @GetMapping("/orders-by-client")
-    public ResponseEntity<List<OrdersByClientDTO>> getOrdersByClient() {
-        return ResponseEntity.ok(dashboardService.getOrdersByClient());
+    public ResponseEntity<List<OrdersByClientDTO>> getOrdersByClient(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(dashboardService.getOrdersByClient(startDate, endDate));
     }
 
     /**
-     * GET /api/dashboard/orders-by-driver
-     * Get order count grouped by driver
+     * GET /api/dashboard/orders-by-driver?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
      */
     @GetMapping("/orders-by-driver")
-    public ResponseEntity<List<OrdersByDriverDTO>> getOrdersByDriver() {
-        return ResponseEntity.ok(dashboardService.getOrdersByDriver());
+    public ResponseEntity<List<OrdersByDriverDTO>> getOrdersByDriver(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(dashboardService.getOrdersByDriver(startDate, endDate));
     }
 
     /**
-     * GET /api/dashboard/orders-by-truck
-     * Get order count grouped by truck
+     * GET /api/dashboard/orders-by-truck?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
      */
     @GetMapping("/orders-by-truck")
-    public ResponseEntity<List<OrdersByTruckDTO>> getOrdersByTruck() {
-        return ResponseEntity.ok(dashboardService.getOrdersByTruck());
+    public ResponseEntity<List<OrdersByTruckDTO>> getOrdersByTruck(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(dashboardService.getOrdersByTruck(startDate, endDate));
     }
 
     /**
-     * GET /api/dashboard/orders-by-status
-     * Get order count grouped by status
+     * GET /api/dashboard/orders-by-status?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
      */
     @GetMapping("/orders-by-status")
-    public ResponseEntity<List<OrdersByStatusDTO>> getOrdersByStatus() {
-        return ResponseEntity.ok(dashboardService.getOrdersByStatus());
+    public ResponseEntity<List<OrdersByStatusDTO>> getOrdersByStatus(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(dashboardService.getOrdersByStatus(startDate, endDate));
     }
 
     /**
-     * GET /api/dashboard/performance-metrics
-     * Get performance metrics
+     * GET /api/dashboard/performance-metrics?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD
      */
     @GetMapping("/performance-metrics")
-    public ResponseEntity<PerformanceMetricsDTO> getPerformanceMetrics() {
-        return ResponseEntity.ok(dashboardService.getPerformanceMetrics());
+    public ResponseEntity<PerformanceMetricsDTO> getPerformanceMetrics(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        return ResponseEntity.ok(dashboardService.getPerformanceMetrics(startDate, endDate));
     }
 }

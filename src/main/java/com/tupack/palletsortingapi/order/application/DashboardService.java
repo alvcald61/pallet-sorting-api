@@ -13,6 +13,8 @@ import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderR
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.TruckRepository;
 import com.tupack.palletsortingapi.user.infrastructure.outbound.database.ClientRepository;
 import com.tupack.palletsortingapi.user.infrastructure.outbound.database.DriverRepository;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -33,35 +35,67 @@ public class DashboardService {
   private final TruckRepository truckRepository;
 
   /**
+   * Converts optional LocalDate params to LocalDateTime range boundaries.
+   * Returns null if startDate is null (meaning no filter).
+   */
+  private LocalDateTime toStartOfDay(LocalDate date) {
+    return date != null ? date.atStartOfDay() : null;
+  }
+
+  private LocalDateTime toEndOfDay(LocalDate date) {
+    return date != null ? date.atTime(23, 59, 59) : null;
+  }
+
+  /**
    * Get general dashboard statistics
    */
-  public DashboardStatsDTO getStats() {
-    log.debug("Calculating dashboard statistics");
+  public DashboardStatsDTO getStats(LocalDate startDate, LocalDate endDate) {
+    log.debug("Calculating dashboard statistics, startDate={}, endDate={}", startDate, endDate);
 
-    long totalOrders = orderRepository.count();
-    long pendingOrders = orderRepository.countByStatusIn(
-        List.of(OrderStatus.APPROVED, OrderStatus.IN_PROGRESS));
-    long deliveredOrders = orderRepository.countByStatusIn(
-        List.of(OrderStatus.DELIVERED));
-    Double totalRevenue = orderRepository.sumAllAmounts().doubleValue();
+    long totalOrders;
+    long pendingOrders;
+    long deliveredOrders;
+    Double totalRevenue;
 
-    log.debug("Stats calculated: totalOrders={}, pendingOrders={}, deliveredOrders={}, revenue={}",
-        totalOrders, pendingOrders, deliveredOrders, totalRevenue);
+    if (startDate != null && endDate != null) {
+      LocalDateTime start = toStartOfDay(startDate);
+      LocalDateTime end = toEndOfDay(endDate);
+      totalOrders = orderRepository.countByStatusInAndDateRange(List.of(OrderStatus.values()), start, end);
+      pendingOrders = orderRepository.countByStatusInAndDateRange(
+          List.of(OrderStatus.APPROVED, OrderStatus.IN_PROGRESS), start, end);
+      deliveredOrders = orderRepository.countByStatusInAndDateRange(
+          List.of(OrderStatus.DELIVERED), start, end);
+      totalRevenue = orderRepository.sumAllAmountsInDateRange(start, end).doubleValue();
+    } else {
+      totalOrders = orderRepository.count();
+      pendingOrders = orderRepository.countByStatusIn(
+          List.of(OrderStatus.APPROVED, OrderStatus.IN_PROGRESS));
+      deliveredOrders = orderRepository.countByStatusIn(List.of(OrderStatus.DELIVERED));
+      totalRevenue = orderRepository.sumAllAmounts().doubleValue();
+    }
 
     return DashboardStatsDTO.builder().totalOrders(totalOrders).pendingOrders(pendingOrders)
         .deliveredOrders(deliveredOrders).totalRevenue(totalRevenue).build();
   }
 
   /**
-   * Get pending orders with optional limit
+   * Get pending orders with optional limit and date filter
    */
-  public List<PendingOrderDTO> getPendingOrders(Integer limit) {
+  public List<PendingOrderDTO> getPendingOrders(Integer limit, LocalDate startDate, LocalDate endDate) {
     int actualLimit = limit != null && limit > 0 ? limit : 10;
     log.debug("Fetching pending orders with limit: {}", actualLimit);
 
     Pageable pageable = Pageable.ofSize(actualLimit);
-    List<Order> pendingOrders = orderRepository.findByStatusInOrderByPickupDateAsc(
-        List.of(OrderStatus.APPROVED, OrderStatus.IN_PROGRESS), pageable);
+    List<Order> pendingOrders;
+
+    if (startDate != null && endDate != null) {
+      pendingOrders = orderRepository.findByStatusInAndDateRangeOrderByPickupDateAsc(
+          List.of(OrderStatus.APPROVED, OrderStatus.IN_PROGRESS),
+          toStartOfDay(startDate), toEndOfDay(endDate), pageable);
+    } else {
+      pendingOrders = orderRepository.findByStatusInOrderByPickupDateAsc(
+          List.of(OrderStatus.APPROVED, OrderStatus.IN_PROGRESS), pageable);
+    }
 
     return pendingOrders.stream().map(order -> {
       String clientName = "";
@@ -79,53 +113,76 @@ public class DashboardService {
   /**
    * Get order count grouped by client
    */
-  public List<OrdersByClientDTO> getOrdersByClient() {
+  public List<OrdersByClientDTO> getOrdersByClient(LocalDate startDate, LocalDate endDate) {
     log.debug("Fetching orders grouped by client");
+    if (startDate != null && endDate != null) {
+      return orderRepository.countOrdersByClientInDateRange(toStartOfDay(startDate), toEndOfDay(endDate));
+    }
     return orderRepository.countOrdersByClient();
   }
 
   /**
    * Get order count grouped by driver
    */
-  public List<OrdersByDriverDTO> getOrdersByDriver() {
+  public List<OrdersByDriverDTO> getOrdersByDriver(LocalDate startDate, LocalDate endDate) {
     log.debug("Fetching orders grouped by driver");
+    if (startDate != null && endDate != null) {
+      return orderRepository.countOrdersByDriverInDateRange(toStartOfDay(startDate), toEndOfDay(endDate));
+    }
     return orderRepository.countOrdersByDriver();
   }
 
   /**
    * Get order count grouped by truck
    */
-  public List<OrdersByTruckDTO> getOrdersByTruck() {
+  public List<OrdersByTruckDTO> getOrdersByTruck(LocalDate startDate, LocalDate endDate) {
     log.debug("Fetching orders grouped by truck");
+    if (startDate != null && endDate != null) {
+      return orderRepository.countOrdersByTruckInDateRange(toStartOfDay(startDate), toEndOfDay(endDate));
+    }
     return orderRepository.countOrdersByTruck();
   }
 
   /**
    * Get order count grouped by status
    */
-  public List<OrdersByStatusDTO> getOrdersByStatus() {
+  public List<OrdersByStatusDTO> getOrdersByStatus(LocalDate startDate, LocalDate endDate) {
     log.debug("Fetching orders grouped by status");
+    if (startDate != null && endDate != null) {
+      return orderRepository.countOrdersByStatusInDateRange(toStartOfDay(startDate), toEndOfDay(endDate));
+    }
     return orderRepository.countOrdersByStatus();
   }
 
   /**
    * Get performance metrics
    */
-  public PerformanceMetricsDTO getPerformanceMetrics() {
+  public PerformanceMetricsDTO getPerformanceMetrics(LocalDate startDate, LocalDate endDate) {
     log.debug("Calculating performance metrics");
 
-    Double totalVolume = orderRepository.sumTotalVolume().doubleValue();
-    Double totalWeight = orderRepository.sumTotalWeight().doubleValue();
-    Double totalIncome = orderRepository.sumAllAmounts().doubleValue();
-    long totalOrdersCount = orderRepository.count();
-    Double averageDeliveryTime = 2.5; // Placeholder, adjust based on actual logic
+    Double totalVolume;
+    Double totalWeight;
+    Double totalIncome;
+    long totalOrdersCount;
 
-    log.debug("Performance metrics: volume={}, weight={}, income={}, orders={}",
-        totalVolume, totalWeight, totalIncome, totalOrdersCount);
+    if (startDate != null && endDate != null) {
+      LocalDateTime start = toStartOfDay(startDate);
+      LocalDateTime end = toEndOfDay(endDate);
+      totalVolume = orderRepository.sumTotalVolumeInDateRange(start, end).doubleValue();
+      totalWeight = orderRepository.sumTotalWeightInDateRange(start, end).doubleValue();
+      totalIncome = orderRepository.sumAllAmountsInDateRange(start, end).doubleValue();
+      totalOrdersCount = orderRepository.countByStatusInAndDateRange(List.of(OrderStatus.values()), start, end);
+    } else {
+      totalVolume = orderRepository.sumTotalVolume().doubleValue();
+      totalWeight = orderRepository.sumTotalWeight().doubleValue();
+      totalIncome = orderRepository.sumAllAmounts().doubleValue();
+      totalOrdersCount = orderRepository.count();
+    }
+
+    Double averageDeliveryTime = 2.5; // Placeholder
 
     return PerformanceMetricsDTO.builder().totalVolume(totalVolume).totalWeight(totalWeight)
         .averageDeliveryTime(averageDeliveryTime).totalIncome(totalIncome)
         .totalOrders(totalOrdersCount).build();
   }
 }
-

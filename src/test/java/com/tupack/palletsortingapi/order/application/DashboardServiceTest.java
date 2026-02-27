@@ -71,7 +71,7 @@ class DashboardServiceTest extends BaseServiceTest {
     @DisplayName("PERFORMANCE: getStats() should NOT call findAll()")
     void getStatsShouldNotCallFindAll() {
         // When: Get dashboard stats
-        DashboardStatsDTO stats = dashboardService.getStats();
+        DashboardStatsDTO stats = dashboardService.getStats(null, null);
 
         // Then: Should use aggregation queries, NOT findAll()
         verify(orderRepository, never()).findAll();
@@ -93,7 +93,7 @@ class DashboardServiceTest extends BaseServiceTest {
             .thenReturn(List.of());
 
         // When: Get pending orders
-        List<PendingOrderDTO> orders = dashboardService.getPendingOrders(10);
+        List<PendingOrderDTO> orders = dashboardService.getPendingOrders(10, null, null);
 
         // Then: Should use paginated query, NOT findAll()
         verify(orderRepository, never()).findAll();
@@ -118,7 +118,7 @@ class DashboardServiceTest extends BaseServiceTest {
             ));
 
         // When: Get orders by client
-        List<OrdersByClientDTO> result = dashboardService.getOrdersByClient();
+        List<OrdersByClientDTO> result = dashboardService.getOrdersByClient(null, null);
 
         // Then: Should use database aggregation, NOT findAll()
         verify(orderRepository, never()).findAll();
@@ -143,7 +143,7 @@ class DashboardServiceTest extends BaseServiceTest {
             ));
 
         // When: Get orders by driver
-        List<OrdersByDriverDTO> result = dashboardService.getOrdersByDriver();
+        List<OrdersByDriverDTO> result = dashboardService.getOrdersByDriver(null, null);
 
         // Then: Should use database aggregation, NOT findAll()
         verify(orderRepository, never()).findAll();
@@ -168,7 +168,7 @@ class DashboardServiceTest extends BaseServiceTest {
             ));
 
         // When: Get orders by truck
-        List<OrdersByTruckDTO> result = dashboardService.getOrdersByTruck();
+        List<OrdersByTruckDTO> result = dashboardService.getOrdersByTruck(null, null);
 
         // Then: Should use database aggregation, NOT findAll()
         verify(orderRepository, never()).findAll();
@@ -188,7 +188,7 @@ class DashboardServiceTest extends BaseServiceTest {
             ));
 
         // When: Get orders by status
-        List<OrdersByStatusDTO> result = dashboardService.getOrdersByStatus();
+        List<OrdersByStatusDTO> result = dashboardService.getOrdersByStatus(null, null);
 
         // Then: Should use database aggregation, NOT findAll()
         verify(orderRepository, never()).findAll();
@@ -202,7 +202,7 @@ class DashboardServiceTest extends BaseServiceTest {
     @DisplayName("PERFORMANCE: getPerformanceMetrics() should use SUM queries")
     void getPerformanceMetricsShouldUseSumQueries() {
         // When: Get performance metrics
-        PerformanceMetricsDTO metrics = dashboardService.getPerformanceMetrics();
+        PerformanceMetricsDTO metrics = dashboardService.getPerformanceMetrics(null, null);
 
         // Then: Should use SUM and COUNT queries, NOT findAll()
         verify(orderRepository, never()).findAll();
@@ -226,7 +226,7 @@ class DashboardServiceTest extends BaseServiceTest {
             .thenReturn(List.of());
 
         // When: Get pending orders with null limit
-        dashboardService.getPendingOrders(null);
+        dashboardService.getPendingOrders(null, null, null);
 
         // Then: Should use default limit of 10
         verify(orderRepository).findByStatusInOrderByPickupDateAsc(
