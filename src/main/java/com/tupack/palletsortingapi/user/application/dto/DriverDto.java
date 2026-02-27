@@ -7,6 +7,6 @@ import java.time.LocalDateTime;
  * DTO for {@link com.tupack.palletsortingapi.user.domain.Driver}
  */
 public record DriverDto(Long driverId, LocalDateTime createdAt, LocalDateTime updatedAt,
-    String createdBy, String updatedBy, boolean enabled, String dni, String phone, String email,
-    String firstName, String lastName) implements Serializable {
+    String createdBy, String updatedBy, boolean enabled, String dni, String phone, String driverLicence,
+    String email, String firstName, String lastName) implements Serializable {
 }

@@ -88,7 +88,7 @@ public class DriverService {
 
     // Create Driver associated with User
     Driver driver = Driver.builder().user(savedUser).dni(request.getDni())
-        .phone(request.getPhone()).enabled(true).build();
+        .phone(request.getPhone()).driverLicence(request.getDriverLicence()).enabled(true).build();
     Driver savedDriver = driverRepository.save(driver);
 
     log.info("Successfully created driver with id: {} and email: {}", savedDriver.getDriverId(),
@@ -121,6 +121,7 @@ public class DriverService {
       // Update driver information
       driver.setDni(request.getDni());
       driver.setPhone(request.getPhone());
+      driver.setDriverLicence(request.getDriverLicence());
       Driver updated = driverRepository.save(driver);
 
       log.info("Successfully updated driver with id: {}", id);

@@ -17,6 +17,7 @@ public interface DriverMapper {
   @Mapping(target = "email", source = "user.email")
   @Mapping(target = "firstName", source = "user.firstName")
   @Mapping(target = "lastName", source = "user.lastName")
+  @Mapping(target = "driverLicence", source = "driverLicence")
   DriverDto toDto(Driver driver);
 
   Driver toEntity(CreateDriverRequest request);

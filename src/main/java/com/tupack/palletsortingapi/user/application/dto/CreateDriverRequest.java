@@ -43,6 +43,9 @@ public class CreateDriverRequest implements Serializable {
   @Size(max = 20, message = "El teléfono no puede exceder 20 caracteres")
   private String phone;
 
+  @Size(max = 30, message = "La licencia de conducir no puede exceder 30 caracteres")
+  private String driverLicence;
+
   @NotEmpty(message = "Debe asignar al menos un rol")
   private List<Long> roles;
 }

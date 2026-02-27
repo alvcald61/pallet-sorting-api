@@ -37,6 +37,7 @@ public class Driver{
   private User user;
   private String dni;
   private String phone;
+  private String driverLicence;
   @OneToOne
   private Truck truck;
 
