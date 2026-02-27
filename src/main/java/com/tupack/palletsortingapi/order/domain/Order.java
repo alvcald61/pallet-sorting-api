@@ -76,6 +76,8 @@ public class Order extends BaseEntity {
 
   private boolean isDocumentPending = true;
 
+  private String sunatDocumentPath;
+
 
   @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
   private List<OrderDocument> document;
