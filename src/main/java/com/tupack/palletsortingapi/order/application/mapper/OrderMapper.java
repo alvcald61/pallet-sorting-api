@@ -1,0 +1,40 @@
+package com.tupack.palletsortingapi.order.application.mapper;
+
+import com.tupack.palletsortingapi.order.application.dto.OrderDto;
+import com.tupack.palletsortingapi.order.domain.Order;
+import com.tupack.palletsortingapi.order.domain.enums.OrderStatus;
+import com.tupack.palletsortingapi.order.domain.enums.TransportStatus;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.EnumMapping;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingConstants;
+import org.mapstruct.MappingConstants.ComponentModel;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.ReportingPolicy;
+
+@Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = ComponentModel.SPRING, uses = DispatcherDtoMapper.class)
+public interface OrderMapper {
+  Order toEntity(OrderDto orderDto);
+
+  @Mapping(source = "orderStatus", target = "orderStatus")
+  @Mapping(source = "transportStatus", target = "transportStatus")
+  @Mapping(source = "addressLink", target = "toAddressLink")
+  @Mapping(source = "warehouse.locationLink", target = "fromAddressLink")
+  @Mapping(source = "client.id", target = "clientId")
+  OrderDto toDto(Order order);
+
+
+
+  @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+  Order partialUpdate(OrderDto orderDto, @MappingTarget Order order);
+
+  default String mapOrderStatus(OrderStatus orderStatus) {
+    return orderStatus != null ? orderStatus.getState() : null;
+  }
+
+  default String mapTransportStatus(TransportStatus transportStatus) {
+    return transportStatus != null ? transportStatus.name() : null;
+  }
+}
