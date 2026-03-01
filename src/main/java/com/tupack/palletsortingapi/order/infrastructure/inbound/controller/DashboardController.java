@@ -1,6 +1,5 @@
 package com.tupack.palletsortingapi.order.infrastructure.inbound.controller;
 
-import com.tupack.palletsortingapi.order.application.DashboardService;
 import com.tupack.palletsortingapi.order.application.dto.dashboard.DashboardStatsDTO;
 import com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByClientDTO;
 import com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByDriverDTO;
@@ -8,6 +7,8 @@ import com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByStatu
 import com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByTruckDTO;
 import com.tupack.palletsortingapi.order.application.dto.dashboard.PendingOrderDTO;
 import com.tupack.palletsortingapi.order.application.dto.dashboard.PerformanceMetricsDTO;
+import com.tupack.palletsortingapi.order.application.service.DashboardService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;

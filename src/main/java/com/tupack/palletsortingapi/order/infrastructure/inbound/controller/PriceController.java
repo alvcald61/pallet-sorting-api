@@ -1,8 +1,9 @@
 package com.tupack.palletsortingapi.order.infrastructure.inbound.controller;
 
-import com.tupack.palletsortingapi.order.application.PriceService;
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.order.application.dto.PriceDto;
+import com.tupack.palletsortingapi.order.application.service.PriceService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.DeleteMapping;

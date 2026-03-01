@@ -15,6 +15,7 @@ import com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByStatu
 import com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByTruckDTO;
 import com.tupack.palletsortingapi.order.application.dto.dashboard.PendingOrderDTO;
 import com.tupack.palletsortingapi.order.application.dto.dashboard.PerformanceMetricsDTO;
+import com.tupack.palletsortingapi.order.application.service.DashboardService;
 import com.tupack.palletsortingapi.order.domain.enums.OrderStatus;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.TruckRepository;

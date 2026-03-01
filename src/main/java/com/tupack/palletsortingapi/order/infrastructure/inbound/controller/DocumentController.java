@@ -1,7 +1,7 @@
 package com.tupack.palletsortingapi.order.infrastructure.inbound.controller;
 
-import com.tupack.palletsortingapi.order.application.DocumentService;
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
+import com.tupack.palletsortingapi.order.application.service.DocumentService;
 import com.tupack.palletsortingapi.order.domain.Document;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

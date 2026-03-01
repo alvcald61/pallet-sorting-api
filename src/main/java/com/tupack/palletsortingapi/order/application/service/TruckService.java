@@ -1,4 +1,4 @@
-package com.tupack.palletsortingapi.order.application;
+package com.tupack.palletsortingapi.order.application.service;
 
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.common.exception.DriverNotFoundException;

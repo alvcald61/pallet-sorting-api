@@ -1,9 +1,9 @@
 package com.tupack.palletsortingapi.order.infrastructure.inbound.controller;
 
-import com.tupack.palletsortingapi.order.application.WarehouseService;
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.order.application.dto.DocumentWarehouseDto;
 import com.tupack.palletsortingapi.order.application.dto.UpdateDocumentWarehouseDto;
+import com.tupack.palletsortingapi.order.application.service.WarehouseService;
 import com.tupack.palletsortingapi.order.domain.Warehouse;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

@@ -1,7 +1,8 @@
 package com.tupack.palletsortingapi.order.infrastructure.inbound.controller;
 
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
-import com.tupack.palletsortingapi.order.application.OrderSunatService;
+import com.tupack.palletsortingapi.order.application.service.OrderSunatService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;

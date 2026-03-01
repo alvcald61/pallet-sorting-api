@@ -1,7 +1,7 @@
 package com.tupack.palletsortingapi.order.infrastructure.inbound.controller;
 
-import com.tupack.palletsortingapi.order.application.TruckService;
 import com.tupack.palletsortingapi.order.application.service.TruckAvailabilityService;
+import com.tupack.palletsortingapi.order.application.service.TruckService;
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.order.application.dto.TruckAvailabilityResponse;
 import com.tupack.palletsortingapi.order.application.dto.TruckDto;

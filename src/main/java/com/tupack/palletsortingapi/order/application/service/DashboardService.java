@@ -1,4 +1,4 @@
-package com.tupack.palletsortingapi.order.application;
+package com.tupack.palletsortingapi.order.application.service;
 
 import com.tupack.palletsortingapi.order.application.dto.dashboard.DashboardStatsDTO;
 import com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByClientDTO;

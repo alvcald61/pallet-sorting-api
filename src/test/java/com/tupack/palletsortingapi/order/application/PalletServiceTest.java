@@ -12,6 +12,7 @@ import com.tupack.palletsortingapi.common.exception.BusinessException;
 import com.tupack.palletsortingapi.common.exception.PalletNotFoundException;
 import com.tupack.palletsortingapi.fixtures.PalletTestFixtures;
 import com.tupack.palletsortingapi.order.application.mapper.PalletMapper;
+import com.tupack.palletsortingapi.order.application.service.PalletService;
 import com.tupack.palletsortingapi.order.domain.Pallet;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.PalletRepository;
 import java.util.Optional;

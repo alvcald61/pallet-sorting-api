@@ -1,4 +1,4 @@
-package com.tupack.palletsortingapi.order.application;
+package com.tupack.palletsortingapi.order.application.service;
 
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.order.application.dto.CreateOrderTemplateRequest;
@@ -10,15 +10,7 @@ import com.tupack.palletsortingapi.order.application.dto.OrderSuggestionsRespons
 import com.tupack.palletsortingapi.order.application.dto.OrderTemplateDto;
 import com.tupack.palletsortingapi.order.application.dto.SolvePackingRequest;
 import com.tupack.palletsortingapi.order.application.dto.TwoDimensionSolutionResponse;
-import com.tupack.palletsortingapi.order.application.service.CostEstimationService;
-import com.tupack.palletsortingapi.order.application.service.OrderAnalysisService;
-import com.tupack.palletsortingapi.order.application.service.OrderDocumentService;
-import com.tupack.palletsortingapi.order.application.service.OrderPackingService;
-import com.tupack.palletsortingapi.order.application.service.OrderQueryService;
-import com.tupack.palletsortingapi.order.application.service.OrderSchedulingService;
-import com.tupack.palletsortingapi.order.application.service.OrderStatusService;
-import com.tupack.palletsortingapi.order.application.service.OrderSuggestionsService;
-import com.tupack.palletsortingapi.order.application.service.OrderTemplateService;
+
 import java.math.BigDecimal;
 import java.util.List;
 import lombok.RequiredArgsConstructor;

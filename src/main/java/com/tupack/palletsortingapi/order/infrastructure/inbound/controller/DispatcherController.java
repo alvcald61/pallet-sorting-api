@@ -1,8 +1,9 @@
 package com.tupack.palletsortingapi.order.infrastructure.inbound.controller;
 
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
-import com.tupack.palletsortingapi.order.application.DispatcherService;
 import com.tupack.palletsortingapi.order.application.dto.DispatcherDto;
+import com.tupack.palletsortingapi.order.application.service.DispatcherService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
