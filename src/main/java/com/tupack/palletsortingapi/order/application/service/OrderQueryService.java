@@ -94,25 +94,16 @@ public class OrderQueryService {
 
   public GenericResponse getAllOrders(Pageable pageable, String search, List<String> statuses,
       String orderType, String pickupDateFrom, String pickupDateTo) {
-    Client client = getLoggedInClient();
     User user = getLoggedUser();
-
-    String roleName = client.getUser().getRoles().stream()
+    Long userId = user.getId();
+    String roleName = user.getRoles().stream()
         .findFirst()
-        .orElseThrow(() -> new NoRoleAssignedException(client.getUser().getId()))
+        .orElseThrow(() -> new NoRoleAssignedException(user.getId()))
         .getName();
 
-    // Determine client/driver ID based on role
-    Long clientId = null;
-    Long driverId = null;
 
-    switch (roleName) {
-      case "CLIENT" -> clientId = client.getId();
-      case "DRIVER" -> driverId = user.getId();
-      case "ADMIN" -> {
-        // ADMIN can see all orders, no additional filter needed
-      }
-      default -> throw new BusinessException("Invalid role: " + roleName, "INVALID_ROLE");
+    if(roleName.equals("ADMIN")){
+      userId = null;
     }
 
     // Build specification with all filters
@@ -122,8 +113,7 @@ public class OrderQueryService {
         orderType,
         pickupDateFrom,
         pickupDateTo,
-        clientId,
-        driverId
+        userId
     );
 
     // Execute query with filters

@@ -51,3 +51,4 @@ Bin-*
 hs_err_pid*.log
 nul
 *.tmp
+.env*

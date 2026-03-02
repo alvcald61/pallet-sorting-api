@@ -46,7 +46,7 @@ public class ClientTestFixtures {
 
         Role clientRole = new Role();
         clientRole.setId(1L);
-        clientRole.setName("ROLE_CLIENT");
+        clientRole.setName("CLIENT");
         clientRole.setEnabled(true);
 
         user.setRoles(Set.of(clientRole));

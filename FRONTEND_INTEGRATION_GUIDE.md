@@ -264,7 +264,7 @@ Response 200:
   "email": "cliente@empresa.com",
   "firstName": "Juan",
   "lastName": "Pérez",
-  "roles": ["ROLE_CLIENT"]
+  "roles": ["CLIENT"]
 }
 ```
 

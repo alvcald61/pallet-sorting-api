@@ -35,7 +35,7 @@ public class DriverTestFixtures {
 
         Role driverRole = new Role();
         driverRole.setId(2L);
-        driverRole.setName("ROLE_DRIVER");
+        driverRole.setName("DRIVER");
         driverRole.setEnabled(true);
 
         user.setRoles(Set.of(driverRole));

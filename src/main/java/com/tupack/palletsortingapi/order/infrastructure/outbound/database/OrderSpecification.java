@@ -37,21 +37,18 @@ public class OrderSpecification {
       String orderType,
       String pickupDateFrom,
       String pickupDateTo,
-      Long clientId,
-      Long driverId) {
+      Long userId) {
 
     return (root, query, criteriaBuilder) -> {
       List<Predicate> predicates = new ArrayList<>();
 
-      // Filter by client (for CLIENT role)
-      if (clientId != null) {
-        predicates.add(criteriaBuilder.equal(root.get("client").get("id"), clientId));
-      }
-
-      // Filter by driver (for DRIVER role)
-      if (driverId != null) {
-        predicates.add(criteriaBuilder.equal(
-            root.get("truck").get("driver").get("user").get("id"), driverId));
+      // Filter by userId: matches orders where the user is either the client or the driver
+      if (userId != null) {
+        Predicate isClient = criteriaBuilder.equal(
+            root.get("client").get("user").get("id"), userId);
+        Predicate isDriver = criteriaBuilder.equal(
+            root.get("truck").get("driver").get("user").get("id"), userId);
+        predicates.add(criteriaBuilder.or(isClient, isDriver));
       }
 
       // Search filter (client name, addresses, or truck plate)

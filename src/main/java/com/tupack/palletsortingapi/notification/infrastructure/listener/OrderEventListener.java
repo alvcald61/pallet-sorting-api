@@ -157,7 +157,7 @@ public class OrderEventListener {
             }
 
             // Notify all ADMINs
-            List<String> adminIds = notificationService.getUserIdsByRole("ROLE_ADMIN");
+            List<String> adminIds = notificationService.getUserIdsByRole("ADMIN");
             if (!adminIds.isEmpty()) {
                 CreateNotificationDTO adminNotification = CreateNotificationDTO.builder()
                         .title("Nueva Orden Pendiente")

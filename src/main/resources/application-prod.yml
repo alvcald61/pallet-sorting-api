@@ -5,11 +5,15 @@ spring:
     password: ${DB_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:
         format_sql: false
+  flyway:
+    enabled: true
+    out-of-order: false
+    locations: classpath:db/migration
 
 server:
   port: ${SERVER_PORT:8080}
