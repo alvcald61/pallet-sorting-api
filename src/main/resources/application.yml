@@ -19,3 +19,5 @@ application:
       secret-access-key: ${CF_R2_SECRET_ACCESS_KEY:}
       bucket-name: ${CF_R2_BUCKET_NAME:tupack-docs}
       public-url: ${CF_R2_PUBLIC_URL:}
+  company:
+    ruc: ${COMPANY_RUC:20613601296}
