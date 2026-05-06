@@ -11,4 +11,6 @@ public interface ClientRepository extends JpaRepository<Client, Long> {
   List<Client> findAllByEnabled(boolean enabled);
 
   Client getClientsById(Long id);
+
+  Optional<Client> findByRuc(String ruc);
 }
