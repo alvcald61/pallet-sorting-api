@@ -5,5 +5,6 @@ public enum TruckStatus {
   ASSIGNED,
   OUT_OF_SERVICE,
   IN_TRANSIT,
+  RETURNING_TO_PARKING,
   MAINTENANCE
 }

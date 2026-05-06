@@ -87,14 +87,16 @@ public class TruckSelectionService {
   }
 
   /**
-   * Find alternative truck with similar dimensions
+   * Find alternative truck with similar dimensions that is available for the order's time slot.
    */
   private Truck findAlternativeTruck(SolutionDto solution, Order order) {
     Truck recommendedTruck = solution.getTruck();
 
-    return truckRepository.findSimularDimensionsTruck(
+    return truckRepository.findSimilarAvailableTruck(
             recommendedTruck.getWidth(),
-            recommendedTruck.getLength()
+            recommendedTruck.getLength(),
+            order.getPickupDate(),
+            order.getProjectedDeliveryDate()
         )
         .orElseThrow(() -> new NoTruckAvailableException(
             String.format("No alternative truck available for pickup date: %s. "

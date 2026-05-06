@@ -36,18 +36,27 @@ public class OrderInitializationService {
   private final OrderDocumentService orderDocumentService;
 
   /**
-   * Initialize a new order with all required data
+   * Validate that client and warehouse exist before running the expensive packing algorithm.
+   * Throws the appropriate domain exception if either is missing.
+   */
+  public void validatePrerequisites(SolvePackingRequest request) {
+    resolveClient(request);
+    resolveWarehouse(request);
+  }
+
+  /**
+   * Initialize a new order with all required data.
    *
    * @param packingType Packing type (2D, 3D, BULK)
    * @param request     Packing request data
    * @param solution    Packing solution from algorithm
+   * @param zone        Pre-resolved delivery zone (resolved once upstream to avoid a duplicate DB call)
    * @return Initialized order (not yet persisted)
    */
   public Order initializeOrder(String packingType, SolvePackingRequest request,
-      SolutionDto solution) {
+      SolutionDto solution, Zone zone) {
 
     Client client = resolveClient(request);
-    Zone zone = zoneResolverService.resolveZone(request.getToAddress());
     Warehouse warehouse = resolveWarehouse(request);
 
     Order order = new Order();

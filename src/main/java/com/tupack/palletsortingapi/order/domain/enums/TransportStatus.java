@@ -18,7 +18,9 @@ public enum TransportStatus {
   ARRIVED_AT_DESTINATION("Llegó al Destino", "Truck arrived at destination"),
   UNLOADING("Descargando", "Cargo is being unloaded from the truck"),
   UNLOADING_COMPLETED("Descarga Completada", "Unloading operation completed"),
-  DELIVERED("Entregado", "Cargo successfully delivered");
+  DELIVERED("Entregado", "Cargo successfully delivered"),
+  RETURNING_TO_PARKING("Retornando al Estacionamiento", "Truck is returning to parking after delivery"),
+  RETURNED_TO_PARKING("Retornado al Estacionamiento", "Driver confirmed truck has returned to parking");
 
   private final String displayName;
   private final String description;
@@ -32,14 +34,14 @@ public enum TransportStatus {
    * Check if this status represents a terminal state (no more transitions possible)
    */
   public boolean isTerminal() {
-    return this == DELIVERED;
+    return this == RETURNED_TO_PARKING;
   }
 
   /**
    * Check if this status indicates the truck is in motion
    */
   public boolean isInTransit() {
-    return this == EN_ROUTE_TO_WAREHOUSE || this == EN_ROUTE_TO_DESTINATION;
+    return this == EN_ROUTE_TO_WAREHOUSE || this == EN_ROUTE_TO_DESTINATION || this == RETURNING_TO_PARKING;
   }
 
   /**
@@ -64,7 +66,9 @@ public enum TransportStatus {
       case ARRIVED_AT_DESTINATION -> new TransportStatus[]{UNLOADING};
       case UNLOADING -> new TransportStatus[]{UNLOADING_COMPLETED};
       case UNLOADING_COMPLETED -> new TransportStatus[]{DELIVERED};
-      case DELIVERED -> new TransportStatus[]{};
+      case DELIVERED -> new TransportStatus[]{RETURNING_TO_PARKING};
+      case RETURNING_TO_PARKING -> new TransportStatus[]{RETURNED_TO_PARKING};
+      case RETURNED_TO_PARKING -> new TransportStatus[]{};
     };
   }
 

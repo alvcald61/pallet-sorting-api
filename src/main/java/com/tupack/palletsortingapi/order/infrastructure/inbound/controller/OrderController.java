@@ -103,8 +103,9 @@ public class OrderController {
     public ResponseEntity<GenericResponse> processOrderContinuation(@PathVariable Long orderId,
         @RequestParam(required = false) BigDecimal amount,
         @RequestParam(required = false) String gpsLink,
-        @RequestParam(required = false) boolean denied) {
-        return ResponseEntity.ok(orderService.continueOrder(orderId, amount, gpsLink, denied));
+        @RequestParam(required = false) boolean denied,
+        @RequestParam(required = false) String notes) {
+        return ResponseEntity.ok(orderService.continueOrder(orderId, amount, gpsLink, denied, notes));
     }
 
     @PostMapping(value = "/{orderId}/documents/{documentId}/upload", consumes = "multipart/form-data")

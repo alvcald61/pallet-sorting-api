@@ -68,8 +68,8 @@ public class OrderService {
   }
 
   public GenericResponse continueOrder(Long orderId, BigDecimal amount, String gpsLink,
-      boolean denied) {
-    return statusService.continueOrder(orderId, amount, gpsLink, denied);
+      boolean denied, String notes) {
+    return statusService.continueOrder(orderId, amount, gpsLink, denied, notes);
   }
 
   public GenericResponse uploadDocument(Long documentId, Long orderId, MultipartFile file) {

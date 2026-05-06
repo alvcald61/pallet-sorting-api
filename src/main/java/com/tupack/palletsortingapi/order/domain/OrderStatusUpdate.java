@@ -1,6 +1,7 @@
 package com.tupack.palletsortingapi.order.domain;
 
 import com.tupack.palletsortingapi.order.domain.enums.OrderStatus;
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -28,5 +29,8 @@ public class OrderStatusUpdate extends BaseEntity {
 
   @Enumerated(EnumType.STRING)
   OrderStatus orderStatus;
+
+  @Column(columnDefinition = "TEXT")
+  String notes;
 
 }

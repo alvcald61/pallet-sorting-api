@@ -27,6 +27,8 @@ public class SolvePackingRequest {
   @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm")
   private LocalDateTime deliveryDate;
 
+  private LocalDateTime projectedDeliveryDate;
+
   private LocalDateTime endDate;
 
   @Size(max = 100, message = "La ciudad no puede exceder 100 caracteres")

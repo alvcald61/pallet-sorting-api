@@ -7,10 +7,13 @@ import com.tupack.palletsortingapi.notification.domain.event.TransportStatusUpda
 import com.tupack.palletsortingapi.order.application.mapper.TransportStatusUpdateMapper;
 import com.tupack.palletsortingapi.order.domain.Order;
 import com.tupack.palletsortingapi.order.domain.TransportStatusUpdate;
+import com.tupack.palletsortingapi.order.domain.Truck;
 import com.tupack.palletsortingapi.order.domain.enums.OrderStatus;
 import com.tupack.palletsortingapi.order.domain.enums.TransportStatus;
+import com.tupack.palletsortingapi.order.domain.enums.TruckStatus;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.TransportStatusUpdateRepository;
+import com.tupack.palletsortingapi.order.infrastructure.outbound.database.TruckRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -34,6 +37,7 @@ public class TransportStatusService {
     private final TransportStatusUpdateRepository transportStatusUpdateRepository;
     private final TransportStatusUpdateMapper transportStatusUpdateMapper;
     private final ApplicationEventPublisher eventPublisher;
+    private final TruckRepository truckRepository;
 
     /**
      * Update transport status with basic information
@@ -82,10 +86,20 @@ public class TransportStatusService {
         // Update order's current transport status
         order.setTransportStatus(newStatus);
 
-        // If delivered, update order status to COMPLETED
+        // If delivered, record the real delivery date and time
         if (newStatus == TransportStatus.DELIVERED) {
             order.setOrderStatus(OrderStatus.DELIVERED);
             order.setRealDeliveryDate(LocalDateTime.now());
+        }
+
+        // Driver confirmed departure toward parking — reflect that on the truck
+        if (newStatus == TransportStatus.RETURNING_TO_PARKING) {
+            updateTruckStatus(order.getTruck(), TruckStatus.RETURNING_TO_PARKING);
+        }
+
+        // Driver confirmed the truck has returned — release it back to the available pool
+        if (newStatus == TransportStatus.RETURNED_TO_PARKING) {
+            updateTruckStatus(order.getTruck(), TruckStatus.AVAILABLE);
         }
 
         orderRepository.save(order);
@@ -169,12 +183,19 @@ public class TransportStatusService {
     @Transactional
     public void initializeTransportStatus(Order order) {
         order.setTransportStatus(TransportStatus.PENDING);
-        orderRepository.save(order);
+        // No explicit save needed — the entity is already managed within the outer transaction
+        // and the dirty-checked change will be flushed on commit.
 
         TransportStatusUpdate initialUpdate =
             new TransportStatusUpdate(order, TransportStatus.PENDING);
         initialUpdate.setUpdatedBy("SYSTEM");
         transportStatusUpdateRepository.save(initialUpdate);
+    }
+
+    private void updateTruckStatus(Truck truck, TruckStatus status) {
+        if (truck == null) return;
+        truck.setStatus(status);
+        truckRepository.save(truck);
     }
 
     /**

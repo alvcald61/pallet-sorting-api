@@ -2,13 +2,10 @@ package com.tupack.palletsortingapi.order.application.packing;
 
 import com.tupack.palletsortingapi.common.exception.BusinessException;
 import com.tupack.palletsortingapi.common.exception.NoTruckAvailableException;
-import com.tupack.palletsortingapi.order.application.dto.AddressDto;
 import com.tupack.palletsortingapi.order.application.dto.PalletBulkDto;
 import com.tupack.palletsortingapi.order.application.dto.SolutionDto;
 import com.tupack.palletsortingapi.order.application.dto.SolvePackingRequest;
-import com.tupack.palletsortingapi.order.application.service.ZoneResolverService;
 import com.tupack.palletsortingapi.order.domain.Truck;
-import com.tupack.palletsortingapi.order.domain.Zone;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.OrderRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.TruckRepository;
 import com.tupack.palletsortingapi.utils.SolutionUtils;
@@ -37,27 +34,40 @@ public class TwoDimensionPackingSolution implements Strategy {
 
   private final TruckRepository truckRepository;
   private final OrderRepository orderRepository;
-  private final ZoneResolverService zoneResolverService;
 
   @Override
   public SolutionDto execute(SolvePackingRequest request) throws IOException {
     Double totalWeight = request.getTotalWeight();
     Double area = getTotalArea(request);
     Double totalVolume = request.getTotalVolume();
-    Double maxHeight =
-        request.getPallets().stream().mapToDouble(PalletBulkDto::getHeight).max().orElse(0.0);
+    Double maxHeight = request.getPallets().stream().mapToDouble(PalletBulkDto::getHeight).max().orElse(0.0);
     LocalDateTime deliveryDate = request.getDeliveryDate();
+    LocalDateTime projectedDeliveryDate = request.getProjectedDeliveryDate();
+
     if (deliveryDate == null) {
       throw new BusinessException("Delivery date is required", "DELIVERY_DATE_REQUIRED");
     }
-    LocalDateTime projectedDeliveryDate = getProjectedDeliveryDate(request);
-    List<Truck> trucks = truckRepository.findByWeightAndAreaAndHeight(totalWeight, area, maxHeight)
+    if (projectedDeliveryDate == null) {
+      throw new BusinessException("Projected delivery date is required", "PROJECTED_DELIVERY_DATE_REQUIRED");
+    }
+
+    List<Truck> candidates = truckRepository.findByWeightAndAreaAndHeight(totalWeight, area, maxHeight)
         .stream()
         .filter(truck -> hasSufficientVolume(truck, totalVolume))
         .filter(truck -> isTruckAvailableForSlot(truck, deliveryDate, projectedDeliveryDate))
         .toList();
+
     List<MArea> pieces = getPieces(request);
-    for (Truck truck : trucks) {
+
+    for (Truck candidate : candidates) {
+      // Acquire a pessimistic write lock on the truck row before running the algorithm.
+      // This prevents a concurrent request from selecting the same truck between our
+      // availability check and the order being persisted.
+      Truck truck = truckRepository.findByIdWithLock(candidate.getId()).orElse(null);
+      if (truck == null || !isTruckAvailableForSlot(truck, deliveryDate, projectedDeliveryDate)) {
+        continue;
+      }
+
       Dimension truckDimension =
           new Dimension((int) ((truck.getWidth() - RIGHT_PADDING - LEFT_PADDING) * FACTOR),
               (int) ((truck.getLength() - BOTTOM_PADDING - TOP_PADDING) * FACTOR));
@@ -66,12 +76,17 @@ public class TwoDimensionPackingSolution implements Strategy {
       if (bins.length > 1) {
         continue;
       }
+
       var resultPng = SolutionUtils.drawbinToFile(bins, truckDimension);
       var resultTxt = SolutionUtils.createOutputFiles(bins);
-      return SolutionDto.builder().truckId(truck.getId()).truck(truck)
+      return SolutionDto.builder()
+          .truckId(truck.getId())
+          .truck(truck)
           .truckDistributionImageUrl(Paths.get(resultPng.getFirst()).toFile().getAbsolutePath())
-          .truckDistributionUrl(Paths.get(resultTxt.getFirst()).toFile().getAbsolutePath()).build();
+          .truckDistributionUrl(Paths.get(resultTxt.getFirst()).toFile().getAbsolutePath())
+          .build();
     }
+
     throw new NoTruckAvailableException(deliveryDate);
   }
 
@@ -94,18 +109,6 @@ public class TwoDimensionPackingSolution implements Strategy {
     return pieces;
   }
 
-  private Dimension getViewPort(Dimension truck) {
-    Dimension viewPortDimension;
-    Double x1 = truck.getWidth();
-    Double y1 = truck.getHeight();
-    if (x1 > y1) {
-      viewPortDimension = new Dimension(1500, (int) (1500 / (x1 / y1)));
-    } else {
-      viewPortDimension = new Dimension((int) (1500 / (y1 / x1)), 1500);
-    }
-    return viewPortDimension;
-  }
-
   private boolean hasSufficientVolume(Truck truck, Double totalVolume) {
     if (totalVolume == null) {
       return true;
@@ -119,26 +122,8 @@ public class TwoDimensionPackingSolution implements Strategy {
     return !orderRepository.existsOverlappingOrder(startDate, endDate, truck);
   }
 
-  private LocalDateTime getProjectedDeliveryDate(SolvePackingRequest request) {
-    Zone zone = getZoneForRequest(request);
-    return request.getDeliveryDate().plusMinutes(zone.getMaxDeliveryTime());
-  }
-
-  private Zone getZoneForRequest(SolvePackingRequest request) {
-    AddressDto toAddress = request.getToAddress();
-    if (toAddress == null) {
-      throw new BusinessException("Delivery address is required", "DELIVERY_ADDRESS_REQUIRED");
-    }
-    return zoneResolverService.resolveZone(toAddress);
-  }
-
   private Double getTotalArea(SolvePackingRequest request) {
     return request.getPallets().stream()
         .mapToDouble(pallet -> pallet.getWidth() * pallet.getLength() * pallet.getQuantity()).sum();
-  }
-
-  private Double getTotalWeight(SolvePackingRequest request) {
-    return request.getPallets().stream()
-        .mapToDouble(pallet -> pallet.getWeight() * pallet.getQuantity()).sum();
   }
 }

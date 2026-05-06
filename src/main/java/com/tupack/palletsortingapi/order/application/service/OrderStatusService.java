@@ -30,6 +30,9 @@ public class OrderStatusService {
     OrderStatus statusEnum = OrderStatus.valueOf(status);
     Order order = orderRepository.getOrderById(orderId)
         .orElseThrow(() -> new OrderNotFoundException(orderId));
+    // TODO: Implement a proper state machine that enforces valid transitions between all
+    //       OrderStatus values (e.g. prevent going backwards from IN_PROGRESS to REVIEW, or
+    //       jumping directly from REVIEW to DELIVERED). For now only terminal states are guarded.
     if (order.getOrderStatus().equals(OrderStatus.DELIVERED) || order.getOrderStatus()
         .equals(OrderStatus.DENIED)) {
       throw new InvalidOrderStateException(order.getOrderStatus());
@@ -48,7 +51,7 @@ public class OrderStatusService {
 
   @Transactional
   public GenericResponse continueOrder(Long orderId, BigDecimal amount, String gpsLink,
-      boolean denied) {
+      boolean denied, String notes) {
     Order order = orderRepository.getOrderById(orderId)
         .orElseThrow(() -> new OrderNotFoundException(orderId));
     OrderStatus previousStatus = order.getOrderStatus();
@@ -89,7 +92,7 @@ public class OrderStatusService {
     }
     orderRepository.save(order);
     if (!previousStatus.equals(order.getOrderStatus())) {
-      recordStatus(order);
+      recordStatus(order, notes);
 
       // Publish OrderStatusChangedEvent
       eventPublisher.publishEvent(new OrderStatusChangedEvent(this, order, previousStatus, order.getOrderStatus()));
@@ -99,7 +102,15 @@ public class OrderStatusService {
   }
 
   public void recordStatus(Order order) {
-    orderStatusUpdateRepository.save(new OrderStatusUpdate(order, order.getOrderStatus()));
+    recordStatus(order, null);
+  }
+
+  public void recordStatus(Order order, String notes) {
+    orderStatusUpdateRepository.save(OrderStatusUpdate.builder()
+        .order(order)
+        .orderStatus(order.getOrderStatus())
+        .notes(notes)
+        .build());
   }
 
   private static void updateInitialStatus(BigDecimal amount, Order order) {
