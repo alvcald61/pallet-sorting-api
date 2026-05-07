@@ -10,9 +10,10 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 public class AuthResponse {
+  private String id;
   private String accessToken;
   private String refreshToken;
-  private String tokenType; // "Bearer"
+  private String tokenType;
   private String email;
   private String firstName;
   private String lastName;

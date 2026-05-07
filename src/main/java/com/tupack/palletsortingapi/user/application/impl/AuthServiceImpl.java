@@ -78,7 +78,9 @@ public class AuthServiceImpl implements AuthService {
       throw new InvalidTokenException("Refresh token has expired");
     }
     String accessToken = jwtService.generateAccessToken(user.getEmail(), defaultClaims(user));
-    return AuthResponse.builder().accessToken(accessToken).refreshToken(refreshToken) // reuso
+    return AuthResponse.builder()
+            .id(user.getId().toString())
+            .accessToken(accessToken).refreshToken(refreshToken)
             .tokenType("Bearer").email(user.getEmail()).firstName(user.getFirstName())
             .lastName(user.getLastName())
             .roles(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet())).build();
@@ -109,7 +111,9 @@ public class AuthServiceImpl implements AuthService {
   private AuthResponse buildTokensFor(User user) {
     String accessToken = jwtService.generateAccessToken(user.getEmail(), defaultClaims(user));
     String refreshToken = jwtService.generateRefreshToken(user.getEmail());
-    return AuthResponse.builder().accessToken(accessToken).refreshToken(refreshToken)
+    return AuthResponse.builder()
+            .id(user.getId().toString())
+            .accessToken(accessToken).refreshToken(refreshToken)
             .tokenType("Bearer").email(user.getEmail()).firstName(user.getFirstName())
             .lastName(user.getLastName())
             .roles(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet())).build();
