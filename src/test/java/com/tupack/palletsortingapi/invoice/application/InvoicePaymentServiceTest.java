@@ -1,5 +1,6 @@
 package com.tupack.palletsortingapi.invoice.application;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -42,6 +43,8 @@ class InvoicePaymentServiceTest extends BaseServiceTest {
         when(invoiceRepository.save(invoice)).thenReturn(invoice);
 
         invoicePaymentService.assignClient(invoiceId, userId);
+
+        assertThat(invoice.getClient()).isEqualTo(client);
 
         verify(clientRepository).findClientByUserId(userId);
         verify(invoiceRepository).save(invoice);
