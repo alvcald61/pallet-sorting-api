@@ -13,7 +13,7 @@ public class PriceDto implements Serializable {
   Long priceId;
   PriceConditionDto priceCondition;
   ZoneDto zone;
-  Long clientId;
+  Long userId;
   String clientBusinessName;
   BigDecimal price;
   LocalDateTime createdAt;

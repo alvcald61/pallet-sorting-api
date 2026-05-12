@@ -44,6 +44,6 @@ public class OrderDto implements Serializable {
   private String transportStatus;
   private String sunatDocumentPath;
   private DispatcherDto dispatcher;
-  private Long clientId;
+  private Long userId;
 
 }

@@ -18,6 +18,6 @@ public class InvoiceListItemDto {
     private String currency;
     private BigDecimal total;
     private InvoiceStatus status;
-    private Long clientId;
+    private Long userId;
     private String clientBusinessName;
 }

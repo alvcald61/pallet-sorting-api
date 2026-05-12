@@ -22,7 +22,7 @@ public class InvoiceDto {
     private BigDecimal igv;
     private BigDecimal total;
     private InvoiceStatus status;
-    private Long clientId;
+    private Long userId;
     private String clientBusinessName;
     private LocalDateTime paidAt;
     private List<PaymentEvidenceDto> evidenceFiles;
