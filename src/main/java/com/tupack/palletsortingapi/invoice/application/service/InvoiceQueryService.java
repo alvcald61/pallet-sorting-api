@@ -1,5 +1,6 @@
 package com.tupack.palletsortingapi.invoice.application.service;
 
+import com.tupack.palletsortingapi.common.exception.ClientNotFoundException;
 import com.tupack.palletsortingapi.invoice.application.dto.InvoiceBalanceDto;
 import com.tupack.palletsortingapi.invoice.application.dto.InvoiceDto;
 import com.tupack.palletsortingapi.invoice.application.dto.InvoiceListItemDto;
@@ -10,6 +11,7 @@ import com.tupack.palletsortingapi.invoice.domain.enums.InvoiceStatus;
 import com.tupack.palletsortingapi.invoice.domain.exception.InvoiceNotFoundException;
 import com.tupack.palletsortingapi.invoice.infrastructure.outbound.database.InvoiceRepository;
 import com.tupack.palletsortingapi.user.domain.Client;
+import com.tupack.palletsortingapi.user.infrastructure.outbound.database.ClientRepository;
 import jakarta.persistence.criteria.Predicate;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -27,9 +29,16 @@ import org.springframework.stereotype.Service;
 public class InvoiceQueryService {
 
     private final InvoiceRepository invoiceRepository;
+    private final ClientRepository clientRepository;
 
-    public Page<InvoiceListItemDto> getInvoices(String status, Long clientId,
+    public Page<InvoiceListItemDto> getInvoices(String status, Long userId,
         LocalDate dateFrom, LocalDate dateTo, Pageable pageable) {
+        Long clientId = null;
+        if (userId != null) {
+            Client client = clientRepository.findClientByUserId(userId)
+                .orElseThrow(() -> new ClientNotFoundException("userId", userId));
+            clientId = client.getId();
+        }
         Specification<Invoice> spec = buildSpec(status, clientId, dateFrom, dateTo);
         return invoiceRepository.findAll(spec, pageable).map(this::toListItemDto);
     }
@@ -40,8 +49,10 @@ public class InvoiceQueryService {
         return toDto(invoice);
     }
 
-    public InvoiceBalanceDto getBalance(Long clientId) {
-        InvoiceBalanceDto balance = invoiceRepository.computeBalance(clientId);
+    public InvoiceBalanceDto getBalance(Long userId) {
+        Client client = clientRepository.findClientByUserId(userId)
+            .orElseThrow(() -> new ClientNotFoundException("userId", userId));
+        InvoiceBalanceDto balance = invoiceRepository.computeBalance(client.getId());
         if (balance == null || balance.getTotalBilled() == null) {
             return InvoiceBalanceDto.builder()
                 .totalBilled(BigDecimal.ZERO)
@@ -52,8 +63,10 @@ public class InvoiceQueryService {
         return balance;
     }
 
-    public Page<InvoiceListItemDto> getClientInvoices(Long clientId, Pageable pageable) {
-        return invoiceRepository.findAllByClientId(clientId, pageable).map(this::toListItemDto);
+    public Page<InvoiceListItemDto> getClientInvoices(Long userId, Pageable pageable) {
+        Client client = clientRepository.findClientByUserId(userId)
+            .orElseThrow(() -> new ClientNotFoundException("userId", userId));
+        return invoiceRepository.findAllByClientId(client.getId(), pageable).map(this::toListItemDto);
     }
 
     private Specification<Invoice> buildSpec(String status, Long clientId,
@@ -88,7 +101,7 @@ public class InvoiceQueryService {
             .currency(invoice.getCurrency())
             .total(invoice.getTotal())
             .status(invoice.getStatus())
-            .clientId(client != null ? client.getId() : null)
+            .userId(client != null ? client.getUser().getId() : null)
             .clientBusinessName(client != null ? client.getBusinessName() : null)
             .build();
     }
@@ -110,7 +123,7 @@ public class InvoiceQueryService {
             .igv(invoice.getIgv())
             .total(invoice.getTotal())
             .status(invoice.getStatus())
-            .clientId(client != null ? client.getId() : null)
+            .userId(client != null ? client.getUser().getId() : null)
             .clientBusinessName(client != null ? client.getBusinessName() : null)
             .paidAt(invoice.getPaidAt())
             .evidenceFiles(evidence)

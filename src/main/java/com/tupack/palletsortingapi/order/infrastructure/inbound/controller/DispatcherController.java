@@ -22,8 +22,8 @@ class DispatcherController {
   private final DispatcherService dispatcherService;
 
   @GetMapping
-  GenericResponse getDispatchersByClient(@RequestParam Long clientId) {
-    return dispatcherService.getDispatchersByClient(clientId);
+  GenericResponse getDispatchersByUser(@RequestParam Long userId) {
+    return dispatcherService.getDispatchersByUser(userId);
   }
 
   @PostMapping

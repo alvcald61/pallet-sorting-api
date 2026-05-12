@@ -92,8 +92,8 @@ public class CostEstimationService {
    */
   private BigDecimal calculateBaseCost(EstimateCostRequest request, Zone zone) {
     // For Lima deliveries, use existing pricing table
-    if (isLimaDelivery(request) && request.getClientId() != null) {
-      Client client = clientRepository.findById(request.getClientId()).orElse(null);
+    if (isLimaDelivery(request) && request.getUserId() != null) {
+      Client client = clientRepository.findClientByUserId(request.getUserId()).orElse(null);
       if (client != null) {
         return calculateLimaPrice(request, zone, client);
       }
