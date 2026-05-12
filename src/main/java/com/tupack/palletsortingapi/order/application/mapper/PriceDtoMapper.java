@@ -13,7 +13,7 @@ public interface PriceDtoMapper {
   @Mapping(target = "client", ignore = true)
   Price toEntity(PriceDto priceDto);
 
-  @Mapping(source = "client.id", target = "clientId")
+  @Mapping(source = "client.user.id", target = "userId")
   @Mapping(source = "client.businessName", target = "clientBusinessName")
   PriceDto toDto(Price price);
 }

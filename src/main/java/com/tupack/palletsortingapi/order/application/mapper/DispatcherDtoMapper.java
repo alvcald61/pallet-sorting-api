@@ -10,7 +10,7 @@ import org.mapstruct.ReportingPolicy;
 @Mapper(unmappedTargetPolicy = ReportingPolicy.IGNORE, componentModel = ComponentModel.SPRING)
 public interface DispatcherDtoMapper {
 
-  @Mapping(source = "client.id", target = "clientId")
+  @Mapping(source = "client.user.id", target = "userId")
   DispatcherDto toDto(Dispatcher dispatcher);
 
   @Mapping(target = "client", ignore = true)

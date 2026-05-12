@@ -22,7 +22,7 @@ public interface OrderMapper {
   @Mapping(source = "transportStatus", target = "transportStatus")
   @Mapping(source = "addressLink", target = "toAddressLink")
   @Mapping(source = "warehouse.locationLink", target = "fromAddressLink")
-  @Mapping(source = "client.id", target = "clientId")
+  @Mapping(source = "client.user.id", target = "userId")
   OrderDto toDto(Order order);
 
 
