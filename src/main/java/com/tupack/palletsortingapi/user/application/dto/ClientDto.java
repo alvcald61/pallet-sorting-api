@@ -23,6 +23,7 @@ public class ClientDto implements Serializable {
   String email;
   String firstName;
   String lastName;
+  Long userId;
   boolean trust;
   List<RoleDto> roles;
 
