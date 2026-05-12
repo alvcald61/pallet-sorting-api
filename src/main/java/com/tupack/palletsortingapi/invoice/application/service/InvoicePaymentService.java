@@ -56,12 +56,12 @@ public class InvoicePaymentService {
     }
 
     @Transactional
-    public void assignClient(Long invoiceId, Long clientId) {
+    public void assignClient(Long invoiceId, Long userId) {
         Invoice invoice = invoiceRepository.findById(invoiceId)
             .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
-        Client client = clientRepository.findById(clientId)
+        Client client = clientRepository.findClientByUserId(userId)
             .orElseThrow(() -> new BusinessException(
-                "Cliente no encontrado con id: " + clientId, "CLIENT_NOT_FOUND"));
+                "Cliente no encontrado con userId: " + userId, "CLIENT_NOT_FOUND"));
         invoice.setClient(client);
         invoiceRepository.save(invoice);
     }
