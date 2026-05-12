@@ -2,6 +2,7 @@ package com.tupack.palletsortingapi.order.application.service;
 
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.common.exception.BusinessException;
+import com.tupack.palletsortingapi.common.exception.ClientNotFoundException;
 import com.tupack.palletsortingapi.order.application.dto.DispatcherDto;
 import com.tupack.palletsortingapi.order.application.mapper.DispatcherDtoMapper;
 import com.tupack.palletsortingapi.order.domain.Dispatcher;
@@ -24,9 +25,11 @@ public class DispatcherService {
   private final ClientRepository clientRepository;
   private final OrderRepository orderRepository;
 
-  public GenericResponse getDispatchersByClient(Long clientId) {
+  public GenericResponse getDispatchersByUser(Long userId) {
+    Client client = clientRepository.findClientByUserId(userId)
+        .orElseThrow(() -> new ClientNotFoundException("userId", userId));
     List<DispatcherDto> dispatchers = dispatcherRepository
-        .findAllByEnabledAndClientId(true, clientId)
+        .findAllByEnabledAndClientId(true, client.getId())
         .stream()
         .map(dispatcherDtoMapper::toDto)
         .toList();
@@ -35,8 +38,8 @@ public class DispatcherService {
 
   @Transactional
   public GenericResponse createDispatcher(DispatcherDto dto) {
-    Client client = clientRepository.findById(dto.clientId())
-        .orElseThrow(() -> new BusinessException("Cliente no encontrado", "CLIENT_NOT_FOUND"));
+    Client client = clientRepository.findClientByUserId(dto.userId())
+        .orElseThrow(() -> new ClientNotFoundException("userId", dto.userId()));
     Dispatcher dispatcher = dispatcherDtoMapper.toEntity(dto);
     dispatcher.setClient(client);
     Dispatcher saved = dispatcherRepository.save(dispatcher);
