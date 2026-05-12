@@ -25,8 +25,8 @@ class PriceController {
   private final PriceService priceService;
 
   @GetMapping
-  public GenericResponse getAllPrices(@RequestParam(required = false) Long clientId) {
-    return priceService.getAllPrices(clientId);
+  public GenericResponse getAllPrices(@RequestParam(required = false) Long userId) {
+    return priceService.getAllPrices(userId);
   }
 
   @GetMapping("/{id}")

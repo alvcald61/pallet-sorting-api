@@ -38,13 +38,13 @@ public class InvoiceController {
     @GetMapping
     public GenericResponse getInvoices(
         @RequestParam(required = false) String status,
-        @RequestParam(required = false) Long clientId,
+        @RequestParam(required = false) Long userId,
         @RequestParam(required = false) String dateFrom,
         @RequestParam(required = false) String dateTo,
         Pageable pageable) {
         LocalDate from = dateFrom != null ? LocalDate.parse(dateFrom) : null;
         LocalDate to = dateTo != null ? LocalDate.parse(dateTo) : null;
-        return GenericResponse.success(queryService.getInvoices(status, clientId, from, to, pageable));
+        return GenericResponse.success(queryService.getInvoices(status, userId, from, to, pageable));
     }
 
     @GetMapping("/{id}")
@@ -55,8 +55,8 @@ public class InvoiceController {
     @PatchMapping("/{id}/client")
     public GenericResponse assignClient(
         @PathVariable Long id,
-        @RequestParam Long clientId) {
-        paymentService.assignClient(id, clientId);
+        @RequestParam Long userId) {
+        paymentService.assignClient(id, userId);
         return GenericResponse.success("Cliente asignado correctamente");
     }
 
@@ -69,13 +69,13 @@ public class InvoiceController {
         return GenericResponse.success("Factura marcada como pagada");
     }
 
-    @GetMapping("/balance/{clientId}")
-    public GenericResponse getBalance(@PathVariable Long clientId) {
-        return GenericResponse.success(queryService.getBalance(clientId));
+    @GetMapping("/balance/{userId}")
+    public GenericResponse getBalance(@PathVariable Long userId) {
+        return GenericResponse.success(queryService.getBalance(userId));
     }
 
-    @GetMapping("/client/{clientId}")
-    public GenericResponse getClientInvoices(@PathVariable Long clientId, Pageable pageable) {
-        return GenericResponse.success(queryService.getClientInvoices(clientId, pageable));
+    @GetMapping("/client/{userId}")
+    public GenericResponse getClientInvoices(@PathVariable Long userId, Pageable pageable) {
+        return GenericResponse.success(queryService.getClientInvoices(userId, pageable));
     }
 }
