@@ -101,7 +101,7 @@ public class InvoiceQueryService {
             .currency(invoice.getCurrency())
             .total(invoice.getTotal())
             .status(invoice.getStatus())
-            .userId(client != null ? client.getUser().getId() : null)
+            .userId(client != null && client.getUser() != null ? client.getUser().getId() : null)
             .clientBusinessName(client != null ? client.getBusinessName() : null)
             .build();
     }
@@ -123,7 +123,7 @@ public class InvoiceQueryService {
             .igv(invoice.getIgv())
             .total(invoice.getTotal())
             .status(invoice.getStatus())
-            .userId(client != null ? client.getUser().getId() : null)
+            .userId(client != null && client.getUser() != null ? client.getUser().getId() : null)
             .clientBusinessName(client != null ? client.getBusinessName() : null)
             .paidAt(invoice.getPaidAt())
             .evidenceFiles(evidence)
