@@ -1,6 +1,7 @@
 package com.tupack.palletsortingapi.order.application.service;
 
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
+import com.tupack.palletsortingapi.common.exception.ClientNotFoundException;
 import com.tupack.palletsortingapi.common.exception.ZoneNotFoundException;
 import com.tupack.palletsortingapi.order.application.dto.PriceDto;
 import com.tupack.palletsortingapi.order.application.mapper.PriceConditionDtoMapper;
@@ -32,10 +33,12 @@ public class PriceService {
   private final PriceRepository priceRepository;
   private final ClientRepository clientRepository;
 
-  public GenericResponse getAllPrices(Long clientId) {
+  public GenericResponse getAllPrices(Long userId) {
     List<Price> priceList;
-    if (clientId != null) {
-      priceList = priceRepository.findAllByEnabledAndClientId(true, clientId);
+    if (userId != null) {
+      Client client = clientRepository.findClientByUserId(userId)
+          .orElseThrow(() -> new ClientNotFoundException("userId", userId));
+      priceList = priceRepository.findAllByEnabledAndClientId(true, client.getId());
     } else {
       priceList = priceRepository.findAllByEnabled(true);
     }
@@ -75,10 +78,9 @@ public class PriceService {
     price.setPriceCondition(priceCondition);
     price.setZone(zone);
 
-    if (priceDto.getClientId() != null) {
-      Client client = clientRepository.findById(priceDto.getClientId())
-          .orElseThrow(() -> new EntityNotFoundException(
-              "Cliente no encontrado con id: " + priceDto.getClientId()));
+    if (priceDto.getUserId() != null) {
+      Client client = clientRepository.findClientByUserId(priceDto.getUserId())
+          .orElseThrow(() -> new ClientNotFoundException("userId", priceDto.getUserId()));
       price.setClient(client);
     }
 
@@ -109,10 +111,9 @@ public class PriceService {
       price.setPriceCondition(condition);
     }
 
-    if (priceDto.getClientId() != null) {
-      Client client = clientRepository.findById(priceDto.getClientId())
-          .orElseThrow(() -> new EntityNotFoundException(
-              "Cliente no encontrado con id: " + priceDto.getClientId()));
+    if (priceDto.getUserId() != null) {
+      Client client = clientRepository.findClientByUserId(priceDto.getUserId())
+          .orElseThrow(() -> new ClientNotFoundException("userId", priceDto.getUserId()));
       price.setClient(client);
     }
 
