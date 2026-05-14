@@ -5,6 +5,7 @@ import com.tupack.palletsortingapi.invoice.domain.enums.InvoiceStatus;
 import com.tupack.palletsortingapi.invoice.infrastructure.outbound.database.InvoiceRepository;
 import jakarta.persistence.criteria.Predicate;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -88,7 +89,7 @@ public class InvoiceReportService {
             }
 
             return toBytes(workbook);
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new RuntimeException("Error generating invoice report", e);
         }
     }
@@ -109,7 +110,9 @@ public class InvoiceReportService {
         BigDecimal total = invoices.stream()
             .map(Invoice::getTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
         Row row = sheet.createRow(rowNum);
-        row.createCell(0).setCellValue(label);
+        var labelCell = row.createCell(0);
+        labelCell.setCellValue(label);
+        labelCell.setCellStyle(style);
         var totalCell = row.createCell(4);
         totalCell.setCellValue(total.doubleValue());
         totalCell.setCellStyle(style);
@@ -138,7 +141,7 @@ public class InvoiceReportService {
         };
     }
 
-    private byte[] toBytes(XSSFWorkbook workbook) throws Exception {
+    private byte[] toBytes(XSSFWorkbook workbook) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         workbook.write(out);
         return out.toByteArray();

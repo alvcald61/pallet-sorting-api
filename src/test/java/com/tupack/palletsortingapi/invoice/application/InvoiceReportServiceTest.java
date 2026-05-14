@@ -1,7 +1,6 @@
 package com.tupack.palletsortingapi.invoice.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 import com.tupack.palletsortingapi.base.BaseServiceTest;
@@ -17,6 +16,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentMatchers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.data.jpa.domain.Specification;
@@ -30,7 +30,7 @@ class InvoiceReportServiceTest extends BaseServiceTest {
     @Test
     @DisplayName("generateReport returns valid XLSX bytes when invoices exist")
     void generateReportReturnsValidXlsx() throws Exception {
-        when(invoiceRepository.findAll(any(Specification.class)))
+        when(invoiceRepository.findAll(ArgumentMatchers.<Specification<Invoice>>any()))
             .thenReturn(List.of(buildInvoice("F001-001", "Empresa A", "20111111111",
                 InvoiceStatus.PAID, BigDecimal.valueOf(100))));
 
@@ -45,7 +45,7 @@ class InvoiceReportServiceTest extends BaseServiceTest {
     @Test
     @DisplayName("generateReport produces rows for each customer with paid and pending invoices")
     void generateReportGroupsCustomers() throws Exception {
-        when(invoiceRepository.findAll(any(Specification.class))).thenReturn(List.of(
+        when(invoiceRepository.findAll(ArgumentMatchers.<Specification<Invoice>>any())).thenReturn(List.of(
             buildInvoice("F001-001", "Empresa A", "20111111111", InvoiceStatus.PAID,    BigDecimal.valueOf(100)),
             buildInvoice("F001-002", "Empresa A", "20111111111", InvoiceStatus.PENDING, BigDecimal.valueOf(200)),
             buildInvoice("F002-001", "Empresa B", "20222222222", InvoiceStatus.PENDING, BigDecimal.valueOf(50))
@@ -63,7 +63,7 @@ class InvoiceReportServiceTest extends BaseServiceTest {
     @Test
     @DisplayName("generateReport returns XLSX with a single message row when no invoices found")
     void generateReportHandlesEmptyResult() throws Exception {
-        when(invoiceRepository.findAll(any(Specification.class))).thenReturn(List.of());
+        when(invoiceRepository.findAll(ArgumentMatchers.<Specification<Invoice>>any())).thenReturn(List.of());
 
         byte[] result = invoiceReportService.generateReport(null, null);
 
