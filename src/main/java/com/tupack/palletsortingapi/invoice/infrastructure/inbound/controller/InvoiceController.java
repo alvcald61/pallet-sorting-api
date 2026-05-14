@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -83,6 +84,7 @@ public class InvoiceController {
         return GenericResponse.success(queryService.getClientInvoices(userId, pageable));
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/report/export")
     public ResponseEntity<byte[]> exportReport(
         @RequestParam(required = false) String dateFrom,
