@@ -4,11 +4,14 @@ import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.invoice.application.dto.InvoiceUploadResultDto;
 import com.tupack.palletsortingapi.invoice.application.service.InvoicePaymentService;
 import com.tupack.palletsortingapi.invoice.application.service.InvoiceQueryService;
+import com.tupack.palletsortingapi.invoice.application.service.InvoiceReportService;
 import com.tupack.palletsortingapi.invoice.application.service.InvoiceUploadService;
 import java.time.LocalDate;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,6 +31,7 @@ public class InvoiceController {
     private final InvoiceUploadService uploadService;
     private final InvoiceQueryService queryService;
     private final InvoicePaymentService paymentService;
+    private final InvoiceReportService reportService;
 
     @PostMapping(value = "/upload", consumes = "multipart/form-data")
     public ResponseEntity<List<InvoiceUploadResultDto>> upload(
@@ -77,5 +81,19 @@ public class InvoiceController {
     @GetMapping("/client/{userId}")
     public GenericResponse getClientInvoices(@PathVariable Long userId, Pageable pageable) {
         return GenericResponse.success(queryService.getClientInvoices(userId, pageable));
+    }
+
+    @GetMapping("/report/export")
+    public ResponseEntity<byte[]> exportReport(
+        @RequestParam(required = false) String dateFrom,
+        @RequestParam(required = false) String dateTo) {
+        LocalDate from = dateFrom != null ? LocalDate.parse(dateFrom) : null;
+        LocalDate to   = dateTo   != null ? LocalDate.parse(dateTo)   : null;
+        byte[] bytes = reportService.generateReport(from, to);
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"reporte-facturas.xlsx\"")
+            .contentType(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+            .body(bytes);
     }
 }
