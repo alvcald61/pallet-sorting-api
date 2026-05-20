@@ -24,6 +24,8 @@ import jakarta.persistence.Table;
 public class Client extends BaseEntity {
   @OneToOne(fetch = FetchType.LAZY)
   private User user;
+  private String firstName;
+  private String lastName;
   private String ruc;
   private String businessName;
   private String phone;

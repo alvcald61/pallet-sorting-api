@@ -20,10 +20,10 @@ import java.util.stream.Collectors;
 @SuperBuilder
 public class User extends BaseEntity implements UserDetails {
 
-  @Column(nullable = false, length = 150)
+  @Column(length = 150)
   private String firstName;
 
-  @Column(nullable = false, length = 150)
+  @Column(length = 150)
   private String lastName;
 
   @Column(nullable = false, length = 190)

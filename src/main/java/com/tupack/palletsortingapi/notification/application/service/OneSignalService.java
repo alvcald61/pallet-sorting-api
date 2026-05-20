@@ -153,7 +153,7 @@ public class OneSignalService {
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
 
-            restTemplate.postForObject(ONESIGNAL_API_URL, request, Map.class);
+            restTemplate.postForObject(ONESIGNAL_API_URL, request, String.class);
             log.info("Push notification sent to user: {}", userId);
         } catch (Exception e) {
             log.error("Error sending push notification to user {}: {}", userId, e.getMessage());
@@ -245,7 +245,7 @@ public class OneSignalService {
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
 
-            restTemplate.postForObject(ONESIGNAL_API_URL, request, Map.class);
+            restTemplate.postForObject(ONESIGNAL_API_URL, request, String.class);
             log.info("Push notification sent to {} users", userIds.size());
         } catch (Exception e) {
             log.error("Error sending push notification to multiple users: {}", e.getMessage());

@@ -67,14 +67,14 @@ public class ClientService {
 
     // Create User
     Set<Role> roles = resolveRoles(request.getRoles());
-    User user = User.builder().firstName(request.getFirstName()).lastName(request.getLastName())
-        .email(request.getEmail().toLowerCase())
+    User user = User.builder().email(request.getEmail().toLowerCase())
         .password(passwordEncoder.encode(request.getPassword())).roles(roles).enabled(true)
         .build();
     User savedUser = userRepository.save(user);
 
     // Create Client associated with User
-    Client client = Client.builder().user(savedUser).ruc(request.getRuc())
+    Client client = Client.builder().user(savedUser).firstName(request.getFirstName())
+        .lastName(request.getLastName()).ruc(request.getRuc())
         .businessName(request.getBusinessName()).phone(request.getPhone())
         .address(request.getAddress()).trust(request.isTrust()).enabled(true).build();
     Client savedClient = clientRepository.save(client);
@@ -99,8 +99,6 @@ public class ClientService {
       // Update user information if needed
       User user = client.getUser();
       if (user != null) {
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
           user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
@@ -108,6 +106,8 @@ public class ClientService {
       }
 
       // Update client information
+      client.setFirstName(request.getFirstName());
+      client.setLastName(request.getLastName());
       client.setRuc(request.getRuc());
       client.setBusinessName(request.getBusinessName());
       client.setPhone(request.getPhone());

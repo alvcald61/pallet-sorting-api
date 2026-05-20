@@ -60,21 +60,21 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
 
   @Query("SELECT new com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByClientDTO(" +
       "CAST(c.id AS string), " +
-      "CONCAT(c.user.firstName, ' ', c.user.lastName), " +
+      "CONCAT(COALESCE(c.firstName, ''), ' ', COALESCE(c.lastName, '')), " +
       "c.businessName, " +
       "COUNT(o)) " +
       "FROM Order o JOIN o.client c " +
-      "GROUP BY c.id, c.user.firstName, c.user.lastName, c.businessName")
+      "GROUP BY c.id, c.firstName, c.lastName, c.businessName")
   List<OrdersByClientDTO> countOrdersByClient();
 
   @Query("SELECT new com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByDriverDTO(" +
       "CAST(d.driverId AS string), " +
-      "CONCAT(d.user.firstName, ' ', d.user.lastName), " +
-      "CONCAT(d.user.firstName, ' ', d.user.lastName), " +
+      "CONCAT(COALESCE(d.firstName, ''), ' ', COALESCE(d.lastName, '')), " +
+      "CONCAT(COALESCE(d.firstName, ''), ' ', COALESCE(d.lastName, '')), " +
       "COUNT(o)) " +
       "FROM Order o JOIN o.truck t JOIN t.driver d " +
       "WHERE t IS NOT NULL AND d IS NOT NULL " +
-      "GROUP BY d.driverId, d.user.firstName, d.user.lastName")
+      "GROUP BY d.driverId, d.firstName, d.lastName")
   List<OrdersByDriverDTO> countOrdersByDriver();
 
   @Query("SELECT new com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByTruckDTO(" +
@@ -119,21 +119,21 @@ public interface OrderRepository extends JpaRepository<Order, Long>, JpaSpecific
 
   @Query("SELECT new com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByClientDTO(" +
       "CAST(c.id AS string), " +
-      "CONCAT(c.user.firstName, ' ', c.user.lastName), " +
+      "CONCAT(COALESCE(c.firstName, ''), ' ', COALESCE(c.lastName, '')), " +
       "c.businessName, COUNT(o)) " +
       "FROM Order o JOIN o.client c " +
       "WHERE o.pickupDate BETWEEN :startDate AND :endDate " +
-      "GROUP BY c.id, c.user.firstName, c.user.lastName, c.businessName")
+      "GROUP BY c.id, c.firstName, c.lastName, c.businessName")
   List<OrdersByClientDTO> countOrdersByClientInDateRange(@Param("startDate") LocalDateTime startDate,
       @Param("endDate") LocalDateTime endDate);
 
   @Query("SELECT new com.tupack.palletsortingapi.order.application.dto.dashboard.OrdersByDriverDTO(" +
       "CAST(d.driverId AS string), " +
-      "CONCAT(d.user.firstName, ' ', d.user.lastName), " +
-      "CONCAT(d.user.firstName, ' ', d.user.lastName), COUNT(o)) " +
+      "CONCAT(COALESCE(d.firstName, ''), ' ', COALESCE(d.lastName, '')), " +
+      "CONCAT(COALESCE(d.firstName, ''), ' ', COALESCE(d.lastName, '')), COUNT(o)) " +
       "FROM Order o JOIN o.truck t JOIN t.driver d " +
       "WHERE t IS NOT NULL AND d IS NOT NULL AND o.pickupDate BETWEEN :startDate AND :endDate " +
-      "GROUP BY d.driverId, d.user.firstName, d.user.lastName")
+      "GROUP BY d.driverId, d.firstName, d.lastName")
   List<OrdersByDriverDTO> countOrdersByDriverInDateRange(@Param("startDate") LocalDateTime startDate,
       @Param("endDate") LocalDateTime endDate);
 

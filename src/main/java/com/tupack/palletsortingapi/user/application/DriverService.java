@@ -80,14 +80,14 @@ public class DriverService {
 
     // Create User
     Set<Role> roles = resolveRoles(request.getRoles());
-    User user = User.builder().firstName(request.getFirstName()).lastName(request.getLastName())
-        .email(request.getEmail().toLowerCase())
+    User user = User.builder().email(request.getEmail().toLowerCase())
         .password(passwordEncoder.encode(request.getPassword())).roles(roles).enabled(true)
         .build();
     User savedUser = userRepository.save(user);
 
     // Create Driver associated with User
-    Driver driver = Driver.builder().user(savedUser).dni(request.getDni())
+    Driver driver = Driver.builder().user(savedUser).firstName(request.getFirstName())
+        .lastName(request.getLastName()).dni(request.getDni())
         .phone(request.getPhone()).driverLicence(request.getDriverLicence()).enabled(true).build();
     Driver savedDriver = driverRepository.save(driver);
 
@@ -110,8 +110,6 @@ public class DriverService {
       // Update user information if needed
       User user = driver.getUser();
       if (user != null) {
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
         if (request.getPassword() != null && !request.getPassword().isEmpty()) {
           user.setPassword(passwordEncoder.encode(request.getPassword()));
         }
@@ -119,6 +117,8 @@ public class DriverService {
       }
 
       // Update driver information
+      driver.setFirstName(request.getFirstName());
+      driver.setLastName(request.getLastName());
       driver.setDni(request.getDni());
       driver.setPhone(request.getPhone());
       driver.setDriverLicence(request.getDriverLicence());

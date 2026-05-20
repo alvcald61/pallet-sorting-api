@@ -99,9 +99,13 @@ public class DashboardService {
 
     return pendingOrders.stream().map(order -> {
       String clientName = "";
-      if (order.getClient() != null && order.getClient().getUser() != null) {
-        clientName = order.getClient().getUser().getFirstName() + " " + order.getClient().getUser()
-            .getLastName();
+      if (order.getClient() != null) {
+        String first = order.getClient().getFirstName() != null ? order.getClient().getFirstName() : "";
+        String last = order.getClient().getLastName() != null ? order.getClient().getLastName() : "";
+        clientName = (first + " " + last).trim();
+        if (clientName.isEmpty() && order.getClient().getBusinessName() != null) {
+          clientName = order.getClient().getBusinessName();
+        }
       }
       return PendingOrderDTO.builder().id(order.getId().toString()).clientName(clientName)
           .fromAddress(order.getFromAddress()).toAddress(order.getToAddress())

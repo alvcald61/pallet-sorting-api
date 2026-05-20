@@ -52,8 +52,7 @@ public class AuthController {
       return ResponseEntity.status(401).build();
     }
     return ResponseEntity.ok(
-            java.util.Map.of("email", user.getEmail(), "firstName", user.getFirstName(), "lastName",
-                    user.getLastName(), "roles",
+            java.util.Map.of("email", user.getEmail(), "displayName", authService.getDisplayName(user), "roles",
                     user.getAuthorities().stream().map(GrantedAuthority::getAuthority).toList(), "id", user.getId().toString()));
   }
 

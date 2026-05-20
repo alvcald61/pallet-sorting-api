@@ -25,10 +25,11 @@ public interface TruckMapper {
 
   @Named("getFullName")
   default String getFullName(Truck truck) {
-    if(truck.getDriver() == null || truck.getDriver().getUser() == null) {
+    if (truck.getDriver() == null) {
       return null;
     }
-    return truck.getDriver().getUser().getFirstName() + " " + truck.getDriver().getUser().getLastName();
-
+    String first = truck.getDriver().getFirstName() != null ? truck.getDriver().getFirstName() : "";
+    String last = truck.getDriver().getLastName() != null ? truck.getDriver().getLastName() : "";
+    return (first + " " + last).trim();
   }
 }

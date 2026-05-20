@@ -19,11 +19,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateClientRequest implements Serializable {
-  @NotBlank(message = "El nombre es requerido")
   @Size(max = 150, message = "El nombre no puede exceder 150 caracteres")
   private String firstName;
 
-  @NotBlank(message = "El apellido es requerido")
   @Size(max = 150, message = "El apellido no puede exceder 150 caracteres")
   private String lastName;
 

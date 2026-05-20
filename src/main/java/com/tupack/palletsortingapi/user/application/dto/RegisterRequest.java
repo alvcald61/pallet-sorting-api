@@ -9,12 +9,10 @@ import java.util.Set;
 
 @Data
 public class RegisterRequest {
-    @NotBlank(message = "El nombre es requerido")
-    @Size(min = 1, max = 150, message = "El nombre debe tener entre 1 y 150 caracteres")
+    @Size(max = 150, message = "El nombre no puede exceder 150 caracteres")
     private String firstName;
 
-    @NotBlank(message = "El apellido es requerido")
-    @Size(min = 1, max = 150, message = "El apellido debe tener entre 1 y 150 caracteres")
+    @Size(max = 150, message = "El apellido no puede exceder 150 caracteres")
     private String lastName;
 
     @NotBlank(message = "El email es requerido")

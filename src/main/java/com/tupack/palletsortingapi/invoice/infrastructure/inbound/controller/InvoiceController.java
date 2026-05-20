@@ -84,7 +84,7 @@ public class InvoiceController {
         return GenericResponse.success(queryService.getClientInvoices(userId, pageable));
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('ADMIN')")
     @GetMapping("/report/export")
     public ResponseEntity<byte[]> exportReport(
         @RequestParam(required = false) String dateFrom,

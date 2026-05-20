@@ -9,7 +9,6 @@ import java.util.Map;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
-import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -101,7 +100,7 @@ public class SunatXmlParserService {
     }
 
     private String eval(XPath xpath, Document doc, String expression) throws Exception {
-        return (String) xpath.evaluate(expression, doc, XPathConstants.STRING);
+        return xpath.evaluate(expression, doc);
     }
 
     private String requireField(XPath xpath, Document doc, String expression, String fieldName)

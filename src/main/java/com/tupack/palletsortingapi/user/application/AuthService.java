@@ -3,6 +3,7 @@ package com.tupack.palletsortingapi.user.application;
 import com.tupack.palletsortingapi.user.application.dto.AuthResponse;
 import com.tupack.palletsortingapi.user.application.dto.LoginRequest;
 import com.tupack.palletsortingapi.user.application.dto.RegisterRequest;
+import com.tupack.palletsortingapi.user.domain.User;
 
 public interface AuthService {
   AuthResponse register(RegisterRequest request);
@@ -14,4 +15,6 @@ public interface AuthService {
   boolean validateToken(String jwtToken);
 
   String extractUsername(String jwtToken);
+
+  String getDisplayName(User user);
 }

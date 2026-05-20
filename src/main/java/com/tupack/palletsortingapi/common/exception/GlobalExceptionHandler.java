@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -77,10 +76,8 @@ public class GlobalExceptionHandler {
     logger.warn("Validation error: {}", ex.getMessage());
 
     Map<String, String> validationErrors = new HashMap<>();
-    ex.getBindingResult().getAllErrors().forEach(error -> {
-      String fieldName = ((FieldError) error).getField();
-      String errorMessage = error.getDefaultMessage();
-      validationErrors.put(fieldName, errorMessage);
+    ex.getBindingResult().getFieldErrors().forEach(fieldError -> {
+      validationErrors.put(fieldError.getField(), fieldError.getDefaultMessage());
     });
 
     ErrorResponse error = ErrorResponse.of(
@@ -103,11 +100,12 @@ public class GlobalExceptionHandler {
 
     logger.warn("Type mismatch: {}", ex.getMessage());
 
+    Class<?> requiredType = ex.getRequiredType();
     String message = String.format(
         "Invalid value '%s' for parameter '%s'. Expected type: %s",
         ex.getValue(),
         ex.getName(),
-        ex.getRequiredType() != null ? ex.getRequiredType().getSimpleName() : "unknown"
+        requiredType != null ? requiredType.getSimpleName() : "unknown"
     );
 
     ErrorResponse error = ErrorResponse.of(

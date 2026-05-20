@@ -3,8 +3,12 @@ package com.tupack.palletsortingapi.user.application.impl;
 import com.tupack.palletsortingapi.common.exception.BusinessException;
 import com.tupack.palletsortingapi.common.exception.InvalidCredentialsException;
 import com.tupack.palletsortingapi.common.exception.InvalidTokenException;
+import com.tupack.palletsortingapi.user.domain.Client;
+import com.tupack.palletsortingapi.user.domain.Driver;
 import com.tupack.palletsortingapi.user.domain.Role;
 import com.tupack.palletsortingapi.user.domain.User;
+import com.tupack.palletsortingapi.user.infrastructure.outbound.database.ClientRepository;
+import com.tupack.palletsortingapi.user.infrastructure.outbound.database.DriverRepository;
 import com.tupack.palletsortingapi.user.infrastructure.outbound.database.RoleRepository;
 import com.tupack.palletsortingapi.user.infrastructure.outbound.database.UserRepository;
 import com.tupack.palletsortingapi.user.application.AuthService;
@@ -35,6 +39,8 @@ public class AuthServiceImpl implements AuthService {
 
   private final UserRepository userRepository;
   private final RoleRepository roleRepository;
+  private final ClientRepository clientRepository;
+  private final DriverRepository driverRepository;
   private final PasswordEncoder encoder;
   private final AuthenticationManager authManager;
   private final JwtService jwtService;
@@ -49,7 +55,8 @@ public class AuthServiceImpl implements AuthService {
 
     Set<Role> roles = resolveRoles(request.getRoles());
     User user = User.builder().firstName(request.getFirstName()).lastName(request.getLastName())
-            .email(request.getEmail().toLowerCase()).password(encoder.encode(request.getPassword()))
+            .email(request.getEmail().toLowerCase())
+            .password(encoder.encode(request.getPassword()))
             .roles(roles).enabled(true).build();
     userRepository.save(user);
 
@@ -81,8 +88,8 @@ public class AuthServiceImpl implements AuthService {
     return AuthResponse.builder()
             .id(user.getId().toString())
             .accessToken(accessToken).refreshToken(refreshToken)
-            .tokenType("Bearer").email(user.getEmail()).firstName(user.getFirstName())
-            .lastName(user.getLastName())
+            .tokenType("Bearer").email(user.getEmail())
+            .displayName(getDisplayName(user))
             .roles(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet())).build();
   }
 
@@ -108,14 +115,33 @@ public class AuthServiceImpl implements AuthService {
     return jwtService.extractUsername(jwtToken);
   }
 
+  @Override
+  public String getDisplayName(User user) {
+    return driverRepository.findDriverByUserId(user.getId())
+        .map(d -> {
+          String first = d.getFirstName() != null ? d.getFirstName() : "";
+          String last = d.getLastName() != null ? d.getLastName() : "";
+          String name = (first + " " + last).trim();
+          return name.isEmpty() ? user.getEmail() : name;
+        })
+        .orElseGet(() -> clientRepository.findClientByUserId(user.getId())
+            .map(c -> c.getBusinessName() != null ? c.getBusinessName() : user.getEmail())
+            .orElseGet(() -> {
+              String first = user.getFirstName() != null ? user.getFirstName() : "";
+              String last = user.getLastName() != null ? user.getLastName() : "";
+              String name = (first + " " + last).trim();
+              return name.isEmpty() ? user.getEmail() : name;
+            }));
+  }
+
   private AuthResponse buildTokensFor(User user) {
     String accessToken = jwtService.generateAccessToken(user.getEmail(), defaultClaims(user));
     String refreshToken = jwtService.generateRefreshToken(user.getEmail());
     return AuthResponse.builder()
             .id(user.getId().toString())
             .accessToken(accessToken).refreshToken(refreshToken)
-            .tokenType("Bearer").email(user.getEmail()).firstName(user.getFirstName())
-            .lastName(user.getLastName())
+            .tokenType("Bearer").email(user.getEmail())
+            .displayName(getDisplayName(user))
             .roles(user.getRoles().stream().map(Role::getName).collect(Collectors.toSet())).build();
   }
 
@@ -130,7 +156,6 @@ public class AuthServiceImpl implements AuthService {
 
   private java.util.Map<String, Object> defaultClaims(User user) {
     return java.util.Map.of("sub", user.getEmail(), "roles",
-            user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()), "name",
-            user.getFirstName() + " " + user.getLastName());
+            user.getRoles().stream().map(Role::getName).collect(Collectors.toSet()));
   }
 }

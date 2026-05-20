@@ -35,6 +35,8 @@ public class Driver{
   private boolean enabled;
   @OneToOne(fetch = FetchType.LAZY)
   private User user;
+  private String firstName;
+  private String lastName;
   private String dni;
   private String phone;
   private String driverLicence;

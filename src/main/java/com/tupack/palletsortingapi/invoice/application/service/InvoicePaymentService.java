@@ -15,14 +15,12 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class InvoicePaymentService {
 
     private final InvoiceRepository invoiceRepository;
@@ -59,7 +57,7 @@ public class InvoicePaymentService {
     public void assignClient(Long invoiceId, Long userId) {
         Invoice invoice = invoiceRepository.findById(invoiceId)
             .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
-        Client client = clientRepository.findClientByUserId(userId)
+        Client client = clientRepository.findById(userId)
             .orElseThrow(() -> new BusinessException(
                 "Cliente no encontrado con userId: " + userId, "CLIENT_NOT_FOUND"));
         invoice.setClient(client);
@@ -78,7 +76,7 @@ public class InvoicePaymentService {
         } catch (IOException e) {
             throw new BusinessException(
                 "Error al procesar el archivo: " + file.getOriginalFilename(),
-                "FILE_PROCESS_ERROR");
+                "FILE_PROCESS_ERROR", e);
         }
     }
 }
