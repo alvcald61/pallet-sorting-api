@@ -1,6 +1,8 @@
 package com.tupack.palletsortingapi.order.domain;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -10,6 +12,11 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Entity
 @Table
@@ -17,6 +24,7 @@ import lombok.Setter;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public class PriceCondition {
 
   @Id
@@ -27,10 +35,22 @@ public class PriceCondition {
   private Double maxWeight;
   private Double minVolume;
   private Double maxVolume;
-  private LocalDateTime createdAt;
-  private LocalDateTime updatedAt;
-  private String createdBy;
-  private String updatedBy;
-  private boolean enabled;
 
+  @CreatedDate
+  @Column(name = "created_at", updatable = false)
+  private LocalDateTime createdAt;
+
+  @LastModifiedDate
+  @Column(name = "updated_at")
+  private LocalDateTime updatedAt;
+
+  @CreatedBy
+  @Column(name = "created_by", updatable = false)
+  private String createdBy;
+
+  @LastModifiedBy
+  @Column(name = "updated_by")
+  private String updatedBy;
+
+  private boolean enabled;
 }

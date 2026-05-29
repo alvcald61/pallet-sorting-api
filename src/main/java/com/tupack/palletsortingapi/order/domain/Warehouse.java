@@ -35,6 +35,7 @@ public class Warehouse {
   private String state;
   private String phone;
   private String locationLink;
+  private boolean enabled = true;
 
   @ManyToMany
   @JoinTable(name = "Warehouse_documents", joinColumns = @JoinColumn(name = "warehouseId"), inverseJoinColumns = @JoinColumn(name = "documentId"))

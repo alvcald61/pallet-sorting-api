@@ -32,6 +32,7 @@ public class Document {
   private String documentName;
   private String storagePath;
   private Boolean required;
+  private boolean enabled = true;
 
   @ManyToMany(mappedBy = "documents")
   private Set<Warehouse> warehouses = new LinkedHashSet<>();

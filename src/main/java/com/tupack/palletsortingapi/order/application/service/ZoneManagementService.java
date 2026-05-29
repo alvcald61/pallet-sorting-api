@@ -3,6 +3,7 @@ package com.tupack.palletsortingapi.order.application.service;
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.common.exception.ZoneNotFoundException;
 import com.tupack.palletsortingapi.order.application.dto.ZoneDto;
+import com.tupack.palletsortingapi.order.application.dto.ZoneRequest;
 import com.tupack.palletsortingapi.order.application.mapper.ZoneDtoMapper;
 import com.tupack.palletsortingapi.order.domain.Zone;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.ZoneRepository;
@@ -35,24 +36,18 @@ public class ZoneManagementService {
   }
 
   @Transactional
-  public GenericResponse createZone(ZoneDto dto) {
-    Zone zone = zoneDtoMapper.toEntity(dto);
+  public GenericResponse createZone(ZoneRequest request) {
+    Zone zone = zoneDtoMapper.toEntity(request);
+    zone.setEnabled(true);
     zone = zoneRepository.save(zone);
     return GenericResponse.success(zoneDtoMapper.toDto(zone));
   }
 
   @Transactional
-  public GenericResponse updateZone(Long id, ZoneDto dto) {
+  public GenericResponse updateZone(Long id, ZoneRequest request) {
     Zone zone = zoneRepository.findById(id)
         .orElseThrow(() -> new ZoneNotFoundException(id));
-
-    zone.setName(dto.getName());
-    zone.setZoneName(dto.getZoneName());
-    zone.setDistrict(dto.getDistrict());
-    zone.setCity(dto.getCity());
-    zone.setState(dto.getState());
-    zone.setMaxDeliveryTime(dto.getMaxDeliveryTime());
-
+    zoneDtoMapper.partialUpdate(request, zone);
     zone = zoneRepository.save(zone);
     return GenericResponse.success(zoneDtoMapper.toDto(zone));
   }

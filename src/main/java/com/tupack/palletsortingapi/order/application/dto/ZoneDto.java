@@ -5,7 +5,8 @@ import java.time.LocalDateTime;
 import lombok.Value;
 
 /**
- * DTO for {@link com.tupack.palletsortingapi.order.domain.Zone}
+ * Response DTO for {@link com.tupack.palletsortingapi.order.domain.Zone}.
+ * For inbound requests use {@link ZoneRequest}.
  */
 @Value
 public class ZoneDto implements Serializable {

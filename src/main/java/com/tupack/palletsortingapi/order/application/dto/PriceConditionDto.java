@@ -5,7 +5,8 @@ import java.time.LocalDateTime;
 import lombok.Value;
 
 /**
- * DTO for {@link com.tupack.palletsortingapi.order.domain.PriceCondition}
+ * Response DTO for {@link com.tupack.palletsortingapi.order.domain.PriceCondition}.
+ * For inbound requests use {@link PriceConditionRequest}.
  */
 @Value
 public class PriceConditionDto implements Serializable {

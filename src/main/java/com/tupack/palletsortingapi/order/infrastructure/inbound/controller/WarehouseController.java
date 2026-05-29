@@ -2,22 +2,23 @@ package com.tupack.palletsortingapi.order.infrastructure.inbound.controller;
 
 import com.tupack.palletsortingapi.common.dto.GenericResponse;
 import com.tupack.palletsortingapi.order.application.dto.DocumentWarehouseDto;
-import com.tupack.palletsortingapi.order.application.dto.UpdateDocumentWarehouseDto;
+import com.tupack.palletsortingapi.order.application.dto.WarehouseDto;
 import com.tupack.palletsortingapi.order.application.service.WarehouseService;
-import com.tupack.palletsortingapi.order.domain.Warehouse;
-import java.util.List;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/warehouse")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = "*")
-public class WarehouseController {
+class WarehouseController {
 
   private final WarehouseService warehouseService;
 
@@ -25,8 +26,10 @@ public class WarehouseController {
    * Get all warehouses
    */
   @GetMapping
-  public ResponseEntity<GenericResponse> getAllWarehouses() {
-    GenericResponse response = warehouseService.getAllWarehouses();
+  public ResponseEntity<GenericResponse> getAllWarehouses(
+      @PageableDefault(size = 1000) Pageable pageable
+  ) {
+    GenericResponse response = warehouseService.getAllWarehouses(pageable);
     return ResponseEntity.ok(response);
   }
 
@@ -43,7 +46,8 @@ public class WarehouseController {
    * Create a new warehouse
    */
   @PostMapping
-  public ResponseEntity<GenericResponse> createWarehouse(@RequestBody Warehouse request) {
+  @PreAuthorize("hasRole('ADMIN')")
+  public ResponseEntity<GenericResponse> createWarehouse(@Valid @RequestBody WarehouseDto request) {
     GenericResponse response = warehouseService.createWarehouse(request);
     return ResponseEntity.status(HttpStatus.CREATED).body(response);
   }
@@ -52,18 +56,20 @@ public class WarehouseController {
    * Update an existing warehouse
    */
   @PutMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<GenericResponse> updateWarehouse(
       @PathVariable Long id,
-      @RequestBody Warehouse request
+      @Valid @RequestBody WarehouseDto request
   ) {
     GenericResponse response = warehouseService.updateWarehouse(id, request);
     return ResponseEntity.ok(response);
   }
 
   /**
-   * Delete a warehouse (hard delete)
+   * Soft-delete a warehouse
    */
   @DeleteMapping("/{id}")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<GenericResponse> deleteWarehouse(@PathVariable Long id) {
     GenericResponse response = warehouseService.deleteWarehouse(id);
     return ResponseEntity.ok(response);
@@ -82,9 +88,10 @@ public class WarehouseController {
    * Update documents associated with a warehouse
    */
   @PutMapping("/{id}/documents")
+  @PreAuthorize("hasRole('ADMIN')")
   public ResponseEntity<GenericResponse> updateWarehouseDocuments(
       @PathVariable Long id,
-      @RequestBody DocumentWarehouseDto documentIds
+      @Valid @RequestBody DocumentWarehouseDto documentIds
   ) {
     GenericResponse response = warehouseService.updateWarehouseDocuments(id, documentIds.documents());
     return ResponseEntity.ok(response);

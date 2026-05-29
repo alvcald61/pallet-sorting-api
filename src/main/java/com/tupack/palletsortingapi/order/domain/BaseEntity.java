@@ -1,5 +1,12 @@
 package com.tupack.palletsortingapi.order.domain;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
+import jakarta.persistence.PrePersist;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import lombok.AllArgsConstructor;
@@ -8,13 +15,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.proxy.HibernateProxy;
-import jakarta.persistence.Column;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.PrePersist;
-import jakarta.persistence.PreUpdate;
+import org.springframework.data.annotation.CreatedBy;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedBy;
+import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 @Getter
 @Setter
@@ -22,6 +27,7 @@ import jakarta.persistence.PreUpdate;
 @SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
+@EntityListeners(AuditingEntityListener.class)
 public abstract class BaseEntity {
 
   @Id
@@ -29,26 +35,26 @@ public abstract class BaseEntity {
   @Column(updatable = false, nullable = false)
   private Long id;
 
+  @CreatedDate
   @Column(name = "created_at", updatable = false)
   private LocalDateTime createdAt;
+
+  @LastModifiedDate
   @Column(name = "updated_at")
   private LocalDateTime updatedAt;
+
+  @CreatedBy
+  @Column(updatable = false)
   private String createdBy;
+
+  @LastModifiedBy
   private String updatedBy;
+
   private boolean enabled;
 
   @PrePersist
   public void prePersist() {
-    if (createdAt == null) {
-      createdAt = LocalDateTime.now();
-    }
-    updatedAt = LocalDateTime.now();
     enabled = true;
-  }
-
-  @PreUpdate
-  public void preUpdate() {
-    updatedAt = LocalDateTime.now();
   }
 
   @Override
