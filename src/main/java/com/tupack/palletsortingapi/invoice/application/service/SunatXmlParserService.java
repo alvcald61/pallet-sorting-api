@@ -11,7 +11,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.w3c.dom.Document;
@@ -26,21 +25,14 @@ public class SunatXmlParserService {
         "inv", "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
     );
 
-    @Value("${application.company.ruc}")
-    private String companyRuc;
-
     public ParsedInvoice parse(MultipartFile file) {
         try {
             byte[] bytes = file.getBytes();
             Document doc = buildDocument(bytes);
             XPath xpath = buildXPath();
 
-            String supplierRuc = eval(xpath, doc,
-                "//cac:AccountingSupplierParty//cbc:ID[@schemeID='6']");
-            if (!companyRuc.equals(supplierRuc.trim())) {
-                throw new BusinessException(
-                    "La factura no fue emitida por esta empresa", "SUPPLIER_RUC_MISMATCH");
-            }
+            String supplierRuc = requireField(xpath, doc,
+                "//cac:AccountingSupplierParty//cbc:ID[@schemeID='6']", "supplierRuc");
 
             String invoiceNumber = requireField(xpath, doc, "/inv:Invoice/cbc:ID", "cbc:ID");
             LocalDate issueDate = LocalDate.parse(
@@ -63,6 +55,7 @@ public class SunatXmlParserService {
                 "//cac:LegalMonetaryTotal/cbc:PayableAmount", "total"));
 
             return ParsedInvoice.builder()
+                .supplierRuc(supplierRuc)
                 .invoiceNumber(invoiceNumber)
                 .issueDate(issueDate)
                 .dueDate(dueDate)

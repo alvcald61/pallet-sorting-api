@@ -23,6 +23,7 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -30,14 +31,13 @@ public class InvoiceReportService {
 
     private final InvoiceRepository invoiceRepository;
 
-    public byte[] generateReport(LocalDate dateFrom, LocalDate dateTo) {
-        List<Invoice> invoices = invoiceRepository.findAll(buildSpec(dateFrom, dateTo));
+    @Transactional(readOnly = true)
+    public byte[] generateReport(LocalDate dateFrom, LocalDate dateTo, Long companyId) {
+        List<Invoice> invoices = invoiceRepository.findAll(buildSpec(dateFrom, dateTo, companyId));
 
         try (XSSFWorkbook workbook = new XSSFWorkbook()) {
-            Sheet sheet = workbook.createSheet("Reporte de Facturas");
-
             if (invoices.isEmpty()) {
-                sheet.createRow(0).createCell(0)
+                workbook.createSheet("Sin datos").createRow(0).createCell(0)
                     .setCellValue("Sin datos para el período seleccionado");
                 return toBytes(workbook);
             }
@@ -46,52 +46,62 @@ public class InvoiceReportService {
             CellStyle subHeaderStyle = buildSubHeaderStyle(workbook);
             CellStyle subtotalStyle  = buildSubtotalStyle(workbook);
 
-            Map<String, List<Invoice>> byCustomer = groupByCustomer(invoices);
-            int rowNum = 0;
-
-            for (Map.Entry<String, List<Invoice>> entry : byCustomer.entrySet()) {
-                List<Invoice> group  = entry.getValue();
-                Invoice sample       = group.get(0);
-
-                Row customerRow = sheet.createRow(rowNum++);
-                var customerCell = customerRow.createCell(0);
-                customerCell.setCellValue(sample.getClientName() + " — RUC: " + sample.getClientRuc());
-                customerCell.setCellStyle(headerStyle);
-
-                Row subHeader = sheet.createRow(rowNum++);
-                String[] cols = {"N° Factura", "Fecha emisión", "Vencimiento", "Moneda", "Total", "Estado"};
-                for (int i = 0; i < cols.length; i++) {
-                    var cell = subHeader.createCell(i);
-                    cell.setCellValue(cols[i]);
-                    cell.setCellStyle(subHeaderStyle);
+            if (companyId != null) {
+                String sheetName = sanitizeSheetName(invoices.get(0).getCompany().getName());
+                writeCompanySheet(workbook.createSheet(sheetName), invoices,
+                    headerStyle, subHeaderStyle, subtotalStyle);
+            } else {
+                Map<Long, List<Invoice>> byCompany = groupByCompany(invoices);
+                for (List<Invoice> companyInvoices : byCompany.values()) {
+                    String sheetName = sanitizeSheetName(companyInvoices.get(0).getCompany().getName());
+                    writeCompanySheet(workbook.createSheet(sheetName), companyInvoices,
+                        headerStyle, subHeaderStyle, subtotalStyle);
                 }
-
-                List<Invoice> pending = group.stream()
-                    .filter(inv -> inv.getStatus() == InvoiceStatus.PENDING).toList();
-                List<Invoice> paid = group.stream()
-                    .filter(inv -> inv.getStatus() == InvoiceStatus.PAID).toList();
-
-                for (Invoice inv : pending) {
-                    rowNum = writeInvoiceRow(sheet, rowNum, inv);
-                }
-                rowNum = writeSubtotalRow(sheet, rowNum, "Total pendiente:", pending, subtotalStyle);
-
-                for (Invoice inv : paid) {
-                    rowNum = writeInvoiceRow(sheet, rowNum, inv);
-                }
-                rowNum = writeSubtotalRow(sheet, rowNum, "Total pagado:", paid, subtotalStyle);
-
-                rowNum++; // blank separator between customers
-            }
-
-            for (int i = 0; i < 6; i++) {
-                sheet.autoSizeColumn(i);
             }
 
             return toBytes(workbook);
         } catch (IOException e) {
             throw new RuntimeException("Error generating invoice report", e);
         }
+    }
+
+    private void writeCompanySheet(Sheet sheet, List<Invoice> invoices,
+            CellStyle headerStyle, CellStyle subHeaderStyle, CellStyle subtotalStyle) {
+        Map<String, List<Invoice>> byCustomer = groupByCustomer(invoices);
+        int rowNum = 0;
+
+        for (Map.Entry<String, List<Invoice>> entry : byCustomer.entrySet()) {
+            List<Invoice> group = entry.getValue();
+            Invoice sample = group.get(0);
+
+            Row customerRow = sheet.createRow(rowNum++);
+            var customerCell = customerRow.createCell(0);
+            customerCell.setCellValue(sample.getClientName() + " — RUC: " + sample.getClientRuc());
+            customerCell.setCellStyle(headerStyle);
+
+            Row subHeader = sheet.createRow(rowNum++);
+            String[] cols = {"N° Factura", "Fecha emisión", "Vencimiento", "Moneda", "Total", "Estado"};
+            for (int i = 0; i < cols.length; i++) {
+                var cell = subHeader.createCell(i);
+                cell.setCellValue(cols[i]);
+                cell.setCellStyle(subHeaderStyle);
+            }
+
+            List<Invoice> pending = group.stream()
+                .filter(inv -> inv.getStatus() == InvoiceStatus.PENDING).toList();
+            List<Invoice> paid = group.stream()
+                .filter(inv -> inv.getStatus() == InvoiceStatus.PAID).toList();
+
+            for (Invoice inv : pending) rowNum = writeInvoiceRow(sheet, rowNum, inv);
+            rowNum = writeSubtotalRow(sheet, rowNum, "Total pendiente:", pending, subtotalStyle);
+
+            for (Invoice inv : paid) rowNum = writeInvoiceRow(sheet, rowNum, inv);
+            rowNum = writeSubtotalRow(sheet, rowNum, "Total pagado:", paid, subtotalStyle);
+
+            rowNum++;
+        }
+
+        for (int i = 0; i < 6; i++) sheet.autoSizeColumn(i);
     }
 
     private int writeInvoiceRow(Sheet sheet, int rowNum, Invoice inv) {
@@ -119,6 +129,14 @@ public class InvoiceReportService {
         return rowNum + 1;
     }
 
+    private Map<Long, List<Invoice>> groupByCompany(List<Invoice> invoices) {
+        Map<Long, List<Invoice>> map = new LinkedHashMap<>();
+        for (Invoice inv : invoices) {
+            map.computeIfAbsent(inv.getCompany().getId(), k -> new ArrayList<>()).add(inv);
+        }
+        return map;
+    }
+
     private Map<String, List<Invoice>> groupByCustomer(List<Invoice> invoices) {
         Map<String, List<Invoice>> map = new LinkedHashMap<>();
         for (Invoice inv : invoices) {
@@ -128,14 +146,23 @@ public class InvoiceReportService {
         return map;
     }
 
-    private Specification<Invoice> buildSpec(LocalDate dateFrom, LocalDate dateTo) {
+    private String sanitizeSheetName(String name) {
+        String sanitized = name.replaceAll("[\\\\/*?\\[\\]:]", "").trim();
+        return sanitized.length() > 31 ? sanitized.substring(0, 31) : sanitized;
+    }
+
+    private Specification<Invoice> buildSpec(LocalDate dateFrom, LocalDate dateTo, Long companyId) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.isTrue(root.get("enabled")));
             if (dateFrom != null) {
                 predicates.add(cb.greaterThanOrEqualTo(root.get("issueDate"), dateFrom));
             }
             if (dateTo != null) {
                 predicates.add(cb.lessThanOrEqualTo(root.get("issueDate"), dateTo));
+            }
+            if (companyId != null) {
+                predicates.add(cb.equal(root.get("company").get("id"), companyId));
             }
             return cb.and(predicates.toArray(new Predicate[0]));
         };

@@ -1,6 +1,8 @@
 package com.tupack.palletsortingapi.invoice.application.service;
 
 import com.tupack.palletsortingapi.common.exception.BusinessException;
+import com.tupack.palletsortingapi.company.domain.Company;
+import com.tupack.palletsortingapi.company.infrastructure.outbound.database.CompanyRepository;
 import com.tupack.palletsortingapi.invoice.application.dto.InvoiceUploadResultDto;
 import com.tupack.palletsortingapi.invoice.application.dto.InvoiceUploadResultDto.UploadStatus;
 import com.tupack.palletsortingapi.invoice.domain.Invoice;
@@ -25,6 +27,7 @@ public class InvoiceUploadService {
     private final SunatXmlParserService xmlParserService;
     private final InvoiceRepository invoiceRepository;
     private final ClientRepository clientRepository;
+    private final CompanyRepository companyRepository;
 
     @Transactional
     public List<InvoiceUploadResultDto> upload(List<MultipartFile> files) {
@@ -38,6 +41,11 @@ public class InvoiceUploadService {
         try {
             ParsedInvoice parsed = xmlParserService.parse(file);
 
+            Company company = companyRepository.findByRucAndEnabledTrue(parsed.getSupplierRuc())
+                .orElseThrow(() -> new BusinessException(
+                    "El RUC emisor " + parsed.getSupplierRuc() + " no está registrado. Regístralo en el módulo de Empresas.",
+                    "COMPANY_NOT_FOUND"));
+
             if (invoiceRepository.existsByInvoiceNumber(parsed.getInvoiceNumber())) {
                 return InvoiceUploadResultDto.builder()
                     .fileName(fileName)
@@ -47,6 +55,19 @@ public class InvoiceUploadService {
             }
 
             Optional<Client> clientOpt = clientRepository.findByRuc(parsed.getClientRuc());
+
+            boolean autoRegistered = false;
+            Client client;
+            if (clientOpt.isPresent()) {
+                client = clientOpt.get();
+            } else {
+                client = clientRepository.save(Client.builder()
+                    .ruc(parsed.getClientRuc())
+                    .businessName(parsed.getClientName())
+                    .enabled(true)
+                    .build());
+                autoRegistered = true;
+            }
 
             Invoice invoice = Invoice.builder()
                 .invoiceNumber(parsed.getInvoiceNumber())
@@ -59,17 +80,18 @@ public class InvoiceUploadService {
                 .igv(parsed.getIgv())
                 .total(parsed.getTotal())
                 .status(InvoiceStatus.PENDING)
-                .client(clientOpt.orElse(null))
+                .client(client)
+                .company(company)
                 .build();
 
             invoiceRepository.save(invoice);
 
-            if (clientOpt.isEmpty()) {
+            if (autoRegistered) {
                 return InvoiceUploadResultDto.builder()
                     .fileName(fileName)
                     .status(UploadStatus.WARNING)
                     .invoiceNumber(parsed.getInvoiceNumber())
-                    .message("RUC " + parsed.getClientRuc() + " no encontrado — guardada sin asignar")
+                    .message("RUC " + parsed.getClientRuc() + " no encontrado — cliente registrado automáticamente")
                     .build();
             }
 

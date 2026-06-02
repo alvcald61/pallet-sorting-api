@@ -1,6 +1,8 @@
 package com.tupack.palletsortingapi.invoice.application.service;
 
 import com.tupack.palletsortingapi.common.exception.ClientNotFoundException;
+import com.tupack.palletsortingapi.company.application.dto.CompanyDto;
+import com.tupack.palletsortingapi.company.domain.Company;
 import com.tupack.palletsortingapi.invoice.application.dto.InvoiceBalanceDto;
 import com.tupack.palletsortingapi.invoice.application.dto.InvoiceDto;
 import com.tupack.palletsortingapi.invoice.application.dto.InvoiceListItemDto;
@@ -31,20 +33,21 @@ public class InvoiceQueryService {
     private final InvoiceRepository invoiceRepository;
     private final ClientRepository clientRepository;
 
-    public Page<InvoiceListItemDto> getInvoices(String status, Long userId,
-        LocalDate dateFrom, LocalDate dateTo, Pageable pageable) {
-        Long clientId = null;
-        if (userId != null) {
+    public Page<InvoiceListItemDto> getInvoices(String status, Long userId, Long clientId,
+        LocalDate dateFrom, LocalDate dateTo, Long companyId, Pageable pageable) {
+        Long resolvedClientId = clientId;
+        if (userId != null && resolvedClientId == null) {
             Client client = clientRepository.findClientByUserId(userId)
                 .orElseThrow(() -> new ClientNotFoundException("userId", userId));
-            clientId = client.getId();
+            resolvedClientId = client.getId();
         }
-        Specification<Invoice> spec = buildSpec(status, clientId, dateFrom, dateTo);
+        Specification<Invoice> spec = buildSpec(status, resolvedClientId, dateFrom, dateTo, companyId);
         return invoiceRepository.findAll(spec, pageable).map(this::toListItemDto);
     }
 
     public InvoiceDto getById(Long id) {
         Invoice invoice = invoiceRepository.findById(id)
+            .filter(Invoice::isEnabled)
             .orElseThrow(() -> new InvoiceNotFoundException(id));
         return toDto(invoice);
     }
@@ -70,9 +73,10 @@ public class InvoiceQueryService {
     }
 
     private Specification<Invoice> buildSpec(String status, Long clientId,
-        LocalDate dateFrom, LocalDate dateTo) {
+        LocalDate dateFrom, LocalDate dateTo, Long companyId) {
         return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.isTrue(root.get("enabled")));
             if (status != null) {
                 predicates.add(cb.equal(root.get("status"), InvoiceStatus.valueOf(status)));
             }
@@ -85,6 +89,9 @@ public class InvoiceQueryService {
             if (dateTo != null) {
                 predicates.add(cb.lessThanOrEqualTo(root.get("issueDate"), dateTo));
             }
+            if (companyId != null) {
+                predicates.add(cb.equal(root.get("company").get("id"), companyId));
+            }
             return cb.and(predicates.toArray(new Predicate[0]));
         };
     }
@@ -93,6 +100,7 @@ public class InvoiceQueryService {
         Client client = invoice.getClient();
         return InvoiceListItemDto.builder()
             .id(invoice.getId())
+            .clientId(client != null ? client.getId() : null)
             .invoiceNumber(invoice.getInvoiceNumber())
             .issueDate(invoice.getIssueDate())
             .dueDate(invoice.getDueDate())
@@ -103,6 +111,7 @@ public class InvoiceQueryService {
             .status(invoice.getStatus())
             .userId(client != null && client.getUser() != null ? client.getUser().getId() : null)
             .clientBusinessName(client != null ? client.getBusinessName() : null)
+            .company(toCompanyDto(invoice.getCompany()))
             .build();
     }
 
@@ -127,6 +136,16 @@ public class InvoiceQueryService {
             .clientBusinessName(client != null ? client.getBusinessName() : null)
             .paidAt(invoice.getPaidAt())
             .evidenceFiles(evidence)
+            .company(toCompanyDto(invoice.getCompany()))
+            .build();
+    }
+
+    private CompanyDto toCompanyDto(Company company) {
+        if (company == null) return null;
+        return CompanyDto.builder()
+            .id(company.getId())
+            .name(company.getName())
+            .ruc(company.getRuc())
             .build();
     }
 

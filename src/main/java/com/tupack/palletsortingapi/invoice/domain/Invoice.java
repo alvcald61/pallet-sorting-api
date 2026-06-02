@@ -1,5 +1,6 @@
 package com.tupack.palletsortingapi.invoice.domain;
 
+import com.tupack.palletsortingapi.company.domain.Company;
 import com.tupack.palletsortingapi.invoice.domain.enums.InvoiceStatus;
 import com.tupack.palletsortingapi.order.domain.BaseEntity;
 import com.tupack.palletsortingapi.user.domain.Client;
@@ -8,6 +9,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
@@ -65,6 +67,10 @@ public class Invoice extends BaseEntity {
     @ManyToOne
     @JoinColumn(name = "client_id")
     private Client client;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id", nullable = false)
+    private Company company;
 
     @Column(name = "paid_at")
     private LocalDateTime paidAt;

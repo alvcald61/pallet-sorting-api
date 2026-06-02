@@ -1,5 +1,6 @@
 package com.tupack.palletsortingapi.invoice.application.dto;
 
+import com.tupack.palletsortingapi.company.application.dto.CompanyDto;
 import com.tupack.palletsortingapi.invoice.domain.enums.InvoiceStatus;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -26,4 +27,5 @@ public class InvoiceDto {
     private String clientBusinessName;
     private LocalDateTime paidAt;
     private List<PaymentEvidenceDto> evidenceFiles;
+    private CompanyDto company;
 }

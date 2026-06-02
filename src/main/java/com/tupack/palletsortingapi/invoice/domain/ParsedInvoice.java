@@ -8,6 +8,7 @@ import lombok.Data;
 @Data
 @Builder
 public class ParsedInvoice {
+    private String supplierRuc;
     private String invoiceNumber;
     private LocalDate issueDate;
     private LocalDate dueDate;

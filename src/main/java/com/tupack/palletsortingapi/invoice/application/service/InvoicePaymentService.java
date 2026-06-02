@@ -14,6 +14,7 @@ import com.tupack.palletsortingapi.user.infrastructure.outbound.database.ClientR
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,20 +37,51 @@ public class InvoicePaymentService {
         if (invoice.getStatus() == InvoiceStatus.PAID) {
             throw new InvoiceAlreadyPaidException(invoiceId);
         }
-
         if (evidenceFiles == null || evidenceFiles.isEmpty()) {
             throw new BusinessException(
                 "Se requiere al menos un archivo de evidencia", "EVIDENCE_REQUIRED");
         }
 
-        List<PaymentEvidence> evidenceList = evidenceFiles.stream()
-            .map(file -> uploadEvidence(file, invoice, uploadedBy))
-            .toList();
-
-        paymentEvidenceRepository.saveAll(evidenceList);
-
+        List<UploadedFile> uploads = evidenceFiles.stream().map(this::uploadFile).toList();
+        paymentEvidenceRepository.saveAll(
+            uploads.stream().map(u -> buildEvidence(u, invoice, uploadedBy)).toList());
         invoice.setStatus(InvoiceStatus.PAID);
         invoice.setPaidAt(LocalDateTime.now());
+        invoiceRepository.save(invoice);
+    }
+
+    @Transactional
+    public int markManyAsPaid(List<Long> invoiceIds, List<MultipartFile> evidenceFiles, String uploadedBy) {
+        if (evidenceFiles == null || evidenceFiles.isEmpty()) {
+            throw new BusinessException(
+                "Se requiere al menos un archivo de evidencia", "EVIDENCE_REQUIRED");
+        }
+
+        List<UploadedFile> uploads = evidenceFiles.stream().map(this::uploadFile).toList();
+
+        int count = 0;
+        for (Long id : invoiceIds) {
+            Optional<Invoice> opt = invoiceRepository.findById(id);
+            if (opt.isEmpty() || !opt.get().isEnabled()
+                    || opt.get().getStatus() == InvoiceStatus.PAID) {
+                continue;
+            }
+            Invoice invoice = opt.get();
+            paymentEvidenceRepository.saveAll(
+                uploads.stream().map(u -> buildEvidence(u, invoice, uploadedBy)).toList());
+            invoice.setStatus(InvoiceStatus.PAID);
+            invoice.setPaidAt(LocalDateTime.now());
+            invoiceRepository.save(invoice);
+            count++;
+        }
+        return count;
+    }
+
+    @Transactional
+    public void deleteInvoice(Long id) {
+        Invoice invoice = invoiceRepository.findById(id)
+            .orElseThrow(() -> new InvoiceNotFoundException(id));
+        invoice.setEnabled(false);
         invoiceRepository.save(invoice);
     }
 
@@ -64,19 +96,25 @@ public class InvoicePaymentService {
         invoiceRepository.save(invoice);
     }
 
-    private PaymentEvidence uploadEvidence(MultipartFile file, Invoice invoice, String uploadedBy) {
+    private record UploadedFile(String url, String fileName) {}
+
+    private UploadedFile uploadFile(MultipartFile file) {
         try {
             String url = fileUploader.upload(file.getOriginalFilename(), file.getBytes());
-            return PaymentEvidence.builder()
-                .invoice(invoice)
-                .fileUrl(url)
-                .fileName(file.getOriginalFilename())
-                .uploadedBy(uploadedBy)
-                .build();
+            return new UploadedFile(url, file.getOriginalFilename());
         } catch (IOException e) {
             throw new BusinessException(
                 "Error al procesar el archivo: " + file.getOriginalFilename(),
                 "FILE_PROCESS_ERROR", e);
         }
+    }
+
+    private PaymentEvidence buildEvidence(UploadedFile upload, Invoice invoice, String uploadedBy) {
+        return PaymentEvidence.builder()
+            .invoice(invoice)
+            .fileUrl(upload.url())
+            .fileName(upload.fileName())
+            .uploadedBy(uploadedBy)
+            .build();
     }
 }
