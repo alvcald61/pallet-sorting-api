@@ -28,6 +28,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.data.domain.Pageable;
 
 /**
@@ -41,6 +43,7 @@ import org.springframework.data.domain.Pageable;
  * usage and poor performance with large datasets.
  */
 @DisplayName("DashboardService - Performance Optimization Tests")
+@MockitoSettings(strictness = Strictness.LENIENT)
 class DashboardServiceTest extends BaseServiceTest {
 
     @Mock

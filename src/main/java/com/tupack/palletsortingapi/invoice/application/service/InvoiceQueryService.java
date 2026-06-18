@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -45,6 +46,7 @@ public class InvoiceQueryService {
         return invoiceRepository.findAll(spec, pageable).map(this::toListItemDto);
     }
 
+    @Cacheable(value = "invoice", key = "#id")
     public InvoiceDto getById(Long id) {
         Invoice invoice = invoiceRepository.findById(id)
             .filter(Invoice::isEnabled)
@@ -52,6 +54,7 @@ public class InvoiceQueryService {
         return toDto(invoice);
     }
 
+    @Cacheable(value = "invoice-balance", key = "#userId")
     public InvoiceBalanceDto getBalance(Long userId) {
         Client client = clientRepository.findClientByUserId(userId)
             .orElseThrow(() -> new ClientNotFoundException("userId", userId));

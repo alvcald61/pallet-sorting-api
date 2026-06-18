@@ -11,6 +11,9 @@ import com.tupack.palletsortingapi.user.domain.Driver;
 import com.tupack.palletsortingapi.user.infrastructure.outbound.database.DriverRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +27,7 @@ public class TruckService {
   private final DriverRepository driverRepository;
 
   @Transactional(readOnly = true)
+  @Cacheable("trucks")
   public GenericResponse getAllTrucks() {
     var trucks = truckRepository.findAllByEnabled(true).stream().map(truckMapper::toDto).toList();
 
@@ -31,6 +35,7 @@ public class TruckService {
   }
 
   @Transactional(readOnly = true)
+  @Cacheable(value = "truck", key = "#id")
   public GenericResponse getTruckById(Long id) {
     var truck = truckRepository.findById(id).map(truckMapper::toDto);
     return truck.map(GenericResponse::success)
@@ -38,6 +43,7 @@ public class TruckService {
   }
 
   @Transactional
+  @CacheEvict(value = "trucks", allEntries = true)
   public GenericResponse createTruck(TruckDto truckDTO) {
     Driver driver = driverRepository.findById(truckDTO.getDriverId())
         .orElseThrow(() -> new DriverNotFoundException(truckDTO.getDriverId()));
@@ -51,6 +57,10 @@ public class TruckService {
   }
 
   @Transactional
+  @Caching(evict = {
+      @CacheEvict(value = "trucks", allEntries = true),
+      @CacheEvict(value = "truck", key = "#id"),
+  })
   public GenericResponse updateTruck(Long id, TruckDto truckDTO) {
     return truckRepository.findById(id).map(truck -> {
       truckMapper.updateEntity(truckDTO, truck);
@@ -69,6 +79,10 @@ public class TruckService {
   }
 
   @Transactional
+  @Caching(evict = {
+      @CacheEvict(value = "trucks", allEntries = true),
+      @CacheEvict(value = "truck", key = "#id"),
+  })
   public GenericResponse deleteTruck(Long id) {
     return truckRepository.findById(id).map(truck -> {
       truck.setEnabled(false);

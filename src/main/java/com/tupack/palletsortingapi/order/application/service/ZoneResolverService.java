@@ -7,6 +7,7 @@ import com.tupack.palletsortingapi.order.infrastructure.outbound.database.ZoneRe
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
 /**
@@ -63,6 +64,7 @@ public class ZoneResolverService {
    * @param district District name
    * @return Resolved zone
    */
+  @Cacheable(value = "zone-by-district", key = "#district.toLowerCase()")
   public Zone resolveZoneByDistrict(String district) {
     return zoneRepository.findZoneByDistrictContainingIgnoreCase(district)
         .orElseThrow(() -> new ZoneNotFoundException("No zone found for district: " + district));

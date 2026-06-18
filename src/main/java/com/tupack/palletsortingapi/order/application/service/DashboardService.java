@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +50,7 @@ public class DashboardService {
   /**
    * Get general dashboard statistics
    */
+  @Cacheable(value = "dashboard", key = "{'stats', #startDate, #endDate}")
   public DashboardStatsDTO getStats(LocalDate startDate, LocalDate endDate) {
     log.debug("Calculating dashboard statistics, startDate={}, endDate={}", startDate, endDate);
 
@@ -81,6 +83,7 @@ public class DashboardService {
   /**
    * Get pending orders with optional limit and date filter
    */
+  @Cacheable(value = "dashboard", key = "{'pending', #limit, #startDate, #endDate}")
   public List<PendingOrderDTO> getPendingOrders(Integer limit, LocalDate startDate, LocalDate endDate) {
     int actualLimit = limit != null && limit > 0 ? limit : 10;
     log.debug("Fetching pending orders with limit: {}", actualLimit);
@@ -117,6 +120,7 @@ public class DashboardService {
   /**
    * Get order count grouped by client
    */
+  @Cacheable(value = "dashboard", key = "{'by-client', #startDate, #endDate}")
   public List<OrdersByClientDTO> getOrdersByClient(LocalDate startDate, LocalDate endDate) {
     log.debug("Fetching orders grouped by client");
     if (startDate != null && endDate != null) {
@@ -128,6 +132,7 @@ public class DashboardService {
   /**
    * Get order count grouped by driver
    */
+  @Cacheable(value = "dashboard", key = "{'by-driver', #startDate, #endDate}")
   public List<OrdersByDriverDTO> getOrdersByDriver(LocalDate startDate, LocalDate endDate) {
     log.debug("Fetching orders grouped by driver");
     if (startDate != null && endDate != null) {
@@ -139,6 +144,7 @@ public class DashboardService {
   /**
    * Get order count grouped by truck
    */
+  @Cacheable(value = "dashboard", key = "{'by-truck', #startDate, #endDate}")
   public List<OrdersByTruckDTO> getOrdersByTruck(LocalDate startDate, LocalDate endDate) {
     log.debug("Fetching orders grouped by truck");
     if (startDate != null && endDate != null) {
@@ -150,6 +156,7 @@ public class DashboardService {
   /**
    * Get order count grouped by status
    */
+  @Cacheable(value = "dashboard", key = "{'by-status', #startDate, #endDate}")
   public List<OrdersByStatusDTO> getOrdersByStatus(LocalDate startDate, LocalDate endDate) {
     log.debug("Fetching orders grouped by status");
     if (startDate != null && endDate != null) {
@@ -161,6 +168,7 @@ public class DashboardService {
   /**
    * Get performance metrics
    */
+  @Cacheable(value = "dashboard", key = "{'metrics', #startDate, #endDate}")
   public PerformanceMetricsDTO getPerformanceMetrics(LocalDate startDate, LocalDate endDate) {
     log.debug("Calculating performance metrics");
 

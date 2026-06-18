@@ -10,6 +10,9 @@ import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +24,7 @@ public class PriceConditionService {
   private final PriceConditionRepository priceConditionRepository;
   private final PriceConditionDtoMapper priceConditionDtoMapper;
 
+  @Cacheable("price-conditions")
   public GenericResponse getAllPriceConditions() {
     List<PriceConditionDto> conditions = priceConditionRepository.findAllByEnabled(true)
         .stream()
@@ -29,6 +33,7 @@ public class PriceConditionService {
     return GenericResponse.success(conditions);
   }
 
+  @Cacheable(value = "price-condition", key = "#id")
   public GenericResponse getPriceConditionById(Long id) {
     PriceCondition condition = priceConditionRepository.findById(id)
         .orElseThrow(() -> new EntityNotFoundException(
@@ -37,6 +42,7 @@ public class PriceConditionService {
   }
 
   @Transactional
+  @CacheEvict(value = "price-conditions", allEntries = true)
   public GenericResponse createPriceCondition(PriceConditionRequest request) {
     PriceCondition condition = priceConditionDtoMapper.toEntity(request);
     condition.setEnabled(true);
@@ -45,6 +51,10 @@ public class PriceConditionService {
   }
 
   @Transactional
+  @Caching(evict = {
+      @CacheEvict(value = "price-conditions", allEntries = true),
+      @CacheEvict(value = "price-condition", key = "#id"),
+  })
   public GenericResponse updatePriceCondition(Long id, PriceConditionRequest request) {
     PriceCondition condition = priceConditionRepository.findById(id)
         .orElseThrow(() -> new EntityNotFoundException(
@@ -56,6 +66,10 @@ public class PriceConditionService {
   }
 
   @Transactional
+  @Caching(evict = {
+      @CacheEvict(value = "price-conditions", allEntries = true),
+      @CacheEvict(value = "price-condition", key = "#id"),
+  })
   public GenericResponse deletePriceCondition(Long id) {
     PriceCondition condition = priceConditionRepository.findById(id)
         .orElseThrow(() -> new EntityNotFoundException(

@@ -12,6 +12,9 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +29,7 @@ public class PalletService {
   /**
    * Get all active pallets
    */
+  @Cacheable("pallets")
   public GenericResponse getAllActivePallets() {
     List<PalletDto> palletDtos =
         palletRepository.findAllByEnabled(true).stream().map(palletMapper::toDto)
@@ -37,6 +41,7 @@ public class PalletService {
   /**
    * Get a pallet by ID
    */
+  @Cacheable(value = "pallet", key = "#id")
   public GenericResponse getPalletById(Long id) {
     var pallet = palletRepository.findById(id)
         .filter(Pallet::isEnabled)
@@ -50,6 +55,7 @@ public class PalletService {
    * Create a new pallet
    */
   @Transactional
+  @CacheEvict(value = "pallets", allEntries = true)
   public GenericResponse createPallet(CreatePalletRequest request) {
     Pallet pallet = palletMapper.toEntity(request);
     pallet.setEnabled(true);
@@ -62,6 +68,10 @@ public class PalletService {
    * Update an existing pallet
    */
   @Transactional
+  @Caching(evict = {
+      @CacheEvict(value = "pallets", allEntries = true),
+      @CacheEvict(value = "pallet", key = "#id"),
+  })
   public GenericResponse updatePallet(Long id, CreatePalletRequest request) {
     return palletRepository.findById(id)
         .map(pallet -> {
@@ -82,6 +92,10 @@ public class PalletService {
    * Delete (soft delete) a pallet
    */
   @Transactional
+  @Caching(evict = {
+      @CacheEvict(value = "pallets", allEntries = true),
+      @CacheEvict(value = "pallet", key = "#id"),
+  })
   public GenericResponse deletePallet(Long id) {
     return palletRepository.findById(id)
         .map(pallet -> {

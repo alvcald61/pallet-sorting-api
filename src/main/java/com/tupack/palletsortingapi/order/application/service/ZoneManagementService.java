@@ -10,6 +10,9 @@ import com.tupack.palletsortingapi.order.infrastructure.outbound.database.ZoneRe
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +24,7 @@ public class ZoneManagementService {
   private final ZoneRepository zoneRepository;
   private final ZoneDtoMapper zoneDtoMapper;
 
+  @Cacheable("zones")
   public GenericResponse getAllZones() {
     List<ZoneDto> zones = zoneRepository.findAllByEnabled(true)
         .stream()
@@ -29,6 +33,7 @@ public class ZoneManagementService {
     return GenericResponse.success(zones);
   }
 
+  @Cacheable(value = "zone", key = "#id")
   public GenericResponse getZoneById(Long id) {
     Zone zone = zoneRepository.findById(id)
         .orElseThrow(() -> new ZoneNotFoundException(id));
@@ -36,6 +41,7 @@ public class ZoneManagementService {
   }
 
   @Transactional
+  @CacheEvict(value = {"zones", "zone", "zone-by-district"}, allEntries = true)
   public GenericResponse createZone(ZoneRequest request) {
     Zone zone = zoneDtoMapper.toEntity(request);
     zone.setEnabled(true);
@@ -44,6 +50,7 @@ public class ZoneManagementService {
   }
 
   @Transactional
+  @CacheEvict(value = {"zones", "zone", "zone-by-district"}, allEntries = true)
   public GenericResponse updateZone(Long id, ZoneRequest request) {
     Zone zone = zoneRepository.findById(id)
         .orElseThrow(() -> new ZoneNotFoundException(id));
@@ -53,6 +60,7 @@ public class ZoneManagementService {
   }
 
   @Transactional
+  @CacheEvict(value = {"zones", "zone", "zone-by-district"}, allEntries = true)
   public GenericResponse deleteZone(Long id) {
     Zone zone = zoneRepository.findById(id)
         .orElseThrow(() -> new ZoneNotFoundException(id));

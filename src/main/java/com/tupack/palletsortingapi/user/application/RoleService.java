@@ -11,6 +11,9 @@ import com.tupack.palletsortingapi.user.infrastructure.outbound.database.RoleRep
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +27,7 @@ public class RoleService {
   /**
    * Get all active roles
    */
+  @Cacheable("roles")
   public GenericResponse getAllRoles() {
     var data = roleRepository.findAllByEnabled(true)
         .stream()
@@ -36,6 +40,7 @@ public class RoleService {
   /**
    * Get a role by ID
    */
+  @Cacheable(value = "role", key = "#id")
   public GenericResponse getRoleById(Long id) {
     var role = roleRepository.findById(id)
         .filter(Role::isEnabled)
@@ -48,6 +53,7 @@ public class RoleService {
   /**
    * Get a role by name
    */
+  @Cacheable(value = "role", key = "#name")
   public GenericResponse getRoleByName(String name) {
     var role = roleRepository.findByName(name)
         .filter(Role::isEnabled)
@@ -61,6 +67,7 @@ public class RoleService {
    * Create a new role
    */
   @Transactional
+  @CacheEvict(value = {"roles", "role"}, allEntries = true)
   public GenericResponse createRole(CreateRoleRequest request) {
     // Validate role name doesn't already exist
     if (roleRepository.findByName(request.getName()).isPresent()) {
@@ -79,6 +86,7 @@ public class RoleService {
    * Update an existing role
    */
   @Transactional
+  @CacheEvict(value = {"roles", "role"}, allEntries = true)
   public GenericResponse updateRole(Long id, CreateRoleRequest request) {
     return roleRepository.findById(id)
         .map(role -> {
@@ -106,6 +114,7 @@ public class RoleService {
    * Delete (soft delete) a role
    */
   @Transactional
+  @CacheEvict(value = {"roles", "role"}, allEntries = true)
   public GenericResponse deleteRole(Long id) {
     return roleRepository.findById(id)
         .map(role -> {
