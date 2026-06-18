@@ -31,6 +31,13 @@ application:
   onesignal:
     app-id: test-onesignal-app-id
     rest-api-key: test-onesignal-rest-api-key
+  cloudflare:
+    r2:
+      account-id: test-account-id
+      access-key-id: test-access-key-id
+      secret-access-key: test-secret-access-key
+      bucket-name: test-bucket
+      public-url: https://test.r2.example.com
   company:
     ruc: "20613601296"
 
