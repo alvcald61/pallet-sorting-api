@@ -54,8 +54,9 @@ class PalletServiceTest extends BaseServiceTest {
     void shouldThrowBusinessExceptionWhenUpdatingDisabledPallet() {
         // Given: Disabled pallet exists
         Long palletId = 1L;
-//        Pallet disabledPallet = PalletTestFixtures.createDisabledPallet();
-//        when(palletRepository.findById(palletId)).thenReturn(Optional.of(disabledPallet));
+        Pallet disabledPallet = new Pallet();
+        disabledPallet.setEnabled(false);
+        when(palletRepository.findById(palletId)).thenReturn(Optional.of(disabledPallet));
 
         // When/Then: Should throw BusinessException
         assertThatThrownBy(() -> palletService.updatePallet(palletId, null))

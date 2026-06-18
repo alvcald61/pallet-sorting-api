@@ -56,19 +56,6 @@ public class InvoiceUploadService {
 
             Optional<Client> clientOpt = clientRepository.findByRuc(parsed.getClientRuc());
 
-            boolean autoRegistered = false;
-            Client client;
-            if (clientOpt.isPresent()) {
-                client = clientOpt.get();
-            } else {
-                client = clientRepository.save(Client.builder()
-                    .ruc(parsed.getClientRuc())
-                    .businessName(parsed.getClientName())
-                    .enabled(true)
-                    .build());
-                autoRegistered = true;
-            }
-
             Invoice invoice = Invoice.builder()
                 .invoiceNumber(parsed.getInvoiceNumber())
                 .issueDate(parsed.getIssueDate())
@@ -80,18 +67,18 @@ public class InvoiceUploadService {
                 .igv(parsed.getIgv())
                 .total(parsed.getTotal())
                 .status(InvoiceStatus.PENDING)
-                .client(client)
+                .client(clientOpt.orElse(null))
                 .company(company)
                 .build();
 
             invoiceRepository.save(invoice);
 
-            if (autoRegistered) {
+            if (clientOpt.isEmpty()) {
                 return InvoiceUploadResultDto.builder()
                     .fileName(fileName)
                     .status(UploadStatus.WARNING)
                     .invoiceNumber(parsed.getInvoiceNumber())
-                    .message("RUC " + parsed.getClientRuc() + " no encontrado — cliente registrado automáticamente")
+                    .message("Cliente con RUC " + parsed.getClientRuc() + " sin asignar")
                     .build();
             }
 

@@ -29,9 +29,8 @@ public class ClientTestFixtures {
 
     public static Client createClientWithNames(String firstName, String lastName) {
         Client client = createClient();
-        User user = client.getUser();
-        user.setFirstName(firstName);
-        user.setLastName(lastName);
+        client.setFirstName(firstName);
+        client.setLastName(lastName);
         return client;
     }
 

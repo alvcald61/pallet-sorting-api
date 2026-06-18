@@ -46,17 +46,11 @@ public class InvoiceReportService {
             CellStyle subHeaderStyle = buildSubHeaderStyle(workbook);
             CellStyle subtotalStyle  = buildSubtotalStyle(workbook);
 
-            if (companyId != null) {
-                String sheetName = sanitizeSheetName(invoices.get(0).getCompany().getName());
-                writeCompanySheet(workbook.createSheet(sheetName), invoices,
-                    headerStyle, subHeaderStyle, subtotalStyle);
-            } else {
-                Map<Long, List<Invoice>> byCompany = groupByCompany(invoices);
-                for (List<Invoice> companyInvoices : byCompany.values()) {
-                    String sheetName = sanitizeSheetName(companyInvoices.get(0).getCompany().getName());
-                    writeCompanySheet(workbook.createSheet(sheetName), companyInvoices,
-                        headerStyle, subHeaderStyle, subtotalStyle);
-                }
+            Map<Long, List<Invoice>> byCompany = groupByCompany(invoices);
+            for (List<Invoice> companyInvoices : byCompany.values()) {
+                String sheetName = sanitizeSheetName(companyInvoices.get(0).getCompany().getName());
+                Sheet sheet = workbook.createSheet(sheetName);
+                writeCompanySheet(sheet, companyInvoices, headerStyle, subHeaderStyle, subtotalStyle);
             }
 
             return toBytes(workbook);
@@ -67,39 +61,37 @@ public class InvoiceReportService {
 
     private void writeCompanySheet(Sheet sheet, List<Invoice> invoices,
             CellStyle headerStyle, CellStyle subHeaderStyle, CellStyle subtotalStyle) {
-        Map<String, List<Invoice>> byCustomer = groupByCustomer(invoices);
         int rowNum = 0;
 
+        Row companyRow = sheet.createRow(rowNum++);
+        var companyCell = companyRow.createCell(0);
+        companyCell.setCellValue(invoices.get(0).getCompany().getName());
+        companyCell.setCellStyle(headerStyle);
+
+        Row subHeader = sheet.createRow(rowNum++);
+        String[] cols = {"N° Factura", "Fecha emisión", "Vencimiento", "Moneda", "Total", "Estado"};
+        for (int i = 0; i < cols.length; i++) {
+            var cell = subHeader.createCell(i);
+            cell.setCellValue(cols[i]);
+            cell.setCellStyle(subHeaderStyle);
+        }
+
+        Map<String, List<Invoice>> byCustomer = groupByCustomer(invoices);
         for (Map.Entry<String, List<Invoice>> entry : byCustomer.entrySet()) {
             List<Invoice> group = entry.getValue();
             Invoice sample = group.get(0);
 
             Row customerRow = sheet.createRow(rowNum++);
-            var customerCell = customerRow.createCell(0);
-            customerCell.setCellValue(sample.getClientName() + " — RUC: " + sample.getClientRuc());
-            customerCell.setCellStyle(headerStyle);
+            customerRow.createCell(0)
+                .setCellValue(sample.getClientName() + " — RUC: " + sample.getClientRuc());
 
-            Row subHeader = sheet.createRow(rowNum++);
-            String[] cols = {"N° Factura", "Fecha emisión", "Vencimiento", "Moneda", "Total", "Estado"};
-            for (int i = 0; i < cols.length; i++) {
-                var cell = subHeader.createCell(i);
-                cell.setCellValue(cols[i]);
-                cell.setCellStyle(subHeaderStyle);
-            }
-
-            List<Invoice> pending = group.stream()
-                .filter(inv -> inv.getStatus() == InvoiceStatus.PENDING).toList();
-            List<Invoice> paid = group.stream()
-                .filter(inv -> inv.getStatus() == InvoiceStatus.PAID).toList();
-
-            for (Invoice inv : pending) rowNum = writeInvoiceRow(sheet, rowNum, inv);
-            rowNum = writeSubtotalRow(sheet, rowNum, "Total pendiente:", pending, subtotalStyle);
-
-            for (Invoice inv : paid) rowNum = writeInvoiceRow(sheet, rowNum, inv);
-            rowNum = writeSubtotalRow(sheet, rowNum, "Total pagado:", paid, subtotalStyle);
-
-            rowNum++;
+            for (Invoice inv : group) rowNum = writeInvoiceRow(sheet, rowNum, inv);
+            rowNum = writeSubtotalRow(sheet, rowNum, "Subtotal:", group, subtotalStyle);
         }
+
+        rowNum = writeSubtotalRow(sheet, rowNum,
+            "TOTAL " + invoices.get(0).getCompany().getName() + ":",
+            invoices, subtotalStyle);
 
         for (int i = 0; i < 6; i++) sheet.autoSizeColumn(i);
     }
@@ -111,7 +103,7 @@ public class InvoiceReportService {
         row.createCell(2).setCellValue(inv.getDueDate() != null ? inv.getDueDate().toString() : "");
         row.createCell(3).setCellValue(inv.getCurrency());
         row.createCell(4).setCellValue(inv.getTotal().doubleValue());
-        row.createCell(5).setCellValue(inv.getStatus().name());
+        row.createCell(5).setCellValue(inv.getStatus() == InvoiceStatus.PAID ? "Pagado" : "Pendiente");
         return rowNum + 1;
     }
 

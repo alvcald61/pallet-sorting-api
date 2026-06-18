@@ -6,9 +6,11 @@ import static org.mockito.Mockito.when;
 import com.tupack.palletsortingapi.base.BaseServiceTest;
 import com.tupack.palletsortingapi.fixtures.ClientTestFixtures;
 import com.tupack.palletsortingapi.order.application.dto.PriceDto;
+import com.tupack.palletsortingapi.order.application.dto.ZoneDto;
 import com.tupack.palletsortingapi.order.application.mapper.PriceConditionDtoMapper;
 import com.tupack.palletsortingapi.order.application.mapper.PriceDtoMapper;
 import com.tupack.palletsortingapi.order.domain.Price;
+import com.tupack.palletsortingapi.order.domain.Zone;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.PriceConditionRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.PriceRepository;
 import com.tupack.palletsortingapi.order.infrastructure.outbound.database.ZoneRepository;
@@ -67,15 +69,21 @@ class PriceServiceTest extends BaseServiceTest {
     @DisplayName("createPrice with userId resolves client via findClientByUserId")
     void createPriceWithUserIdResolvesClient() {
         Long userId = 10L;
+        Long zoneId = 1L;
         Client client = ClientTestFixtures.createClient();
         client.setId(7L);
         client.getUser().setId(userId);
 
-        PriceDto dto = new PriceDto(null, null, null, userId, null, BigDecimal.TEN,
+        ZoneDto zoneDto = new ZoneDto(zoneId, null, null, null, null, true, null, null, null, null, null, null);
+        Zone zone = new Zone();
+        zone.setId(zoneId);
+
+        PriceDto dto = new PriceDto(null, null, zoneDto, userId, null, BigDecimal.TEN,
             null, null, null, null, true);
         Price entity = new Price();
 
         when(clientRepository.findClientByUserId(userId)).thenReturn(Optional.of(client));
+        when(zoneRepository.findById(zoneId)).thenReturn(Optional.of(zone));
         when(priceDtoMapper.toEntity(dto)).thenReturn(entity);
         when(priceRepository.save(entity)).thenReturn(entity);
         when(priceDtoMapper.toDto(entity)).thenReturn(dto);

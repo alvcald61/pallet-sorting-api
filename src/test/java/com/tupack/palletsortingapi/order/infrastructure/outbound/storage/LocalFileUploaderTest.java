@@ -2,6 +2,7 @@ package com.tupack.palletsortingapi.order.infrastructure.outbound.storage;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.tupack.palletsortingapi.common.config.StorageProperties;
@@ -44,8 +45,8 @@ class LocalFileUploaderTest {
 
     @BeforeEach
     void setUp() {
-        when(storageProperties.getBasePath()).thenReturn(tempDir.toString());
-        when(storageProperties.getAllowedExtensions()).thenReturn(
+        lenient().when(storageProperties.getBasePath()).thenReturn(tempDir.toString());
+        lenient().when(storageProperties.getAllowedExtensions()).thenReturn(
             List.of("pdf", "jpg", "jpeg", "png", "doc", "docx", "txt"));
         when(storageProperties.getMaxFileSize()).thenReturn(10485760L); // 10MB
 

@@ -11,6 +11,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.w3c.dom.Document;
@@ -18,6 +19,9 @@ import org.w3c.dom.Document;
 @Service
 @Slf4j
 public class SunatXmlParserService {
+
+    @Value("${application.company.ruc}")
+    private String companyRuc;
 
     private static final Map<String, String> NS = Map.of(
         "cbc", "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2",
@@ -33,6 +37,11 @@ public class SunatXmlParserService {
 
             String supplierRuc = requireField(xpath, doc,
                 "//cac:AccountingSupplierParty//cbc:ID[@schemeID='6']", "supplierRuc");
+
+            if (!companyRuc.equals(supplierRuc)) {
+                throw new BusinessException(
+                    "La factura no fue emitida por esta empresa", "INVALID_SUPPLIER");
+            }
 
             String invoiceNumber = requireField(xpath, doc, "/inv:Invoice/cbc:ID", "cbc:ID");
             LocalDate issueDate = LocalDate.parse(

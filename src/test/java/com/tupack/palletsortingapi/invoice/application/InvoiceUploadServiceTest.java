@@ -8,6 +8,8 @@ import static org.mockito.Mockito.when;
 
 import com.tupack.palletsortingapi.base.BaseServiceTest;
 import com.tupack.palletsortingapi.common.exception.BusinessException;
+import com.tupack.palletsortingapi.company.domain.Company;
+import com.tupack.palletsortingapi.company.infrastructure.outbound.database.CompanyRepository;
 import com.tupack.palletsortingapi.invoice.application.dto.InvoiceUploadResultDto;
 import com.tupack.palletsortingapi.invoice.application.dto.InvoiceUploadResultDto.UploadStatus;
 import com.tupack.palletsortingapi.invoice.application.service.InvoiceUploadService;
@@ -33,11 +35,17 @@ class InvoiceUploadServiceTest extends BaseServiceTest {
     @Mock private SunatXmlParserService xmlParserService;
     @Mock private InvoiceRepository invoiceRepository;
     @Mock private ClientRepository clientRepository;
+    @Mock private CompanyRepository companyRepository;
 
     @InjectMocks
     private InvoiceUploadService service;
 
+    private static final String SUPPLIER_RUC = "20613601296";
+    private static final Company COMPANY = Company.builder()
+        .id(1L).name("TUPACK").ruc(SUPPLIER_RUC).build();
+
     private static final ParsedInvoice PARSED = ParsedInvoice.builder()
+        .supplierRuc(SUPPLIER_RUC)
         .invoiceNumber("E001-509")
         .issueDate(LocalDate.of(2026, 5, 5))
         .clientRuc("20101128939")
@@ -54,6 +62,7 @@ class InvoiceUploadServiceTest extends BaseServiceTest {
         MockMultipartFile file = xmlFile("test.xml");
         Client client = new Client();
         when(xmlParserService.parse(file)).thenReturn(PARSED);
+        when(companyRepository.findByRucAndEnabledTrue(SUPPLIER_RUC)).thenReturn(Optional.of(COMPANY));
         when(invoiceRepository.existsByInvoiceNumber("E001-509")).thenReturn(false);
         when(clientRepository.findByRuc("20101128939")).thenReturn(Optional.of(client));
         when(invoiceRepository.save(any(Invoice.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -71,6 +80,7 @@ class InvoiceUploadServiceTest extends BaseServiceTest {
     void shouldReturnWarningWhenRucNotMatched() {
         MockMultipartFile file = xmlFile("noruc.xml");
         when(xmlParserService.parse(file)).thenReturn(PARSED);
+        when(companyRepository.findByRucAndEnabledTrue(SUPPLIER_RUC)).thenReturn(Optional.of(COMPANY));
         when(invoiceRepository.existsByInvoiceNumber("E001-509")).thenReturn(false);
         when(clientRepository.findByRuc("20101128939")).thenReturn(Optional.empty());
         when(invoiceRepository.save(any(Invoice.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -87,6 +97,7 @@ class InvoiceUploadServiceTest extends BaseServiceTest {
     void shouldReturnErrorWhenDuplicate() {
         MockMultipartFile file = xmlFile("dup.xml");
         when(xmlParserService.parse(file)).thenReturn(PARSED);
+        when(companyRepository.findByRucAndEnabledTrue(SUPPLIER_RUC)).thenReturn(Optional.of(COMPANY));
         when(invoiceRepository.existsByInvoiceNumber("E001-509")).thenReturn(true);
 
         List<InvoiceUploadResultDto> results = service.upload(List.of(file));
@@ -118,6 +129,7 @@ class InvoiceUploadServiceTest extends BaseServiceTest {
         when(xmlParserService.parse(bad))
             .thenThrow(new BusinessException("XML inválido", "INVALID_XML"));
         when(xmlParserService.parse(good)).thenReturn(PARSED);
+        when(companyRepository.findByRucAndEnabledTrue(SUPPLIER_RUC)).thenReturn(Optional.of(COMPANY));
         when(invoiceRepository.existsByInvoiceNumber("E001-509")).thenReturn(false);
         when(clientRepository.findByRuc("20101128939")).thenReturn(Optional.of(client));
         when(invoiceRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));

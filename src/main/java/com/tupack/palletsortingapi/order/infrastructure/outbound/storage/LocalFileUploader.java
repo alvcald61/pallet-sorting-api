@@ -67,6 +67,14 @@ public class LocalFileUploader implements FileUploader {
       throw new FileUploadException("Filename cannot be empty");
     }
 
+    if (filename.contains("..")) {
+      throw new FileUploadException("Invalid file path");
+    }
+
+    if (filename.startsWith("/") || filename.startsWith("\\")) {
+      throw new FileUploadException("Invalid file path");
+    }
+
     // Remove path separators and dangerous characters
     String sanitized = filename.replaceAll("[^a-zA-Z0-9._-]", "_");
 

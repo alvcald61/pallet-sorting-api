@@ -16,6 +16,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,6 +32,10 @@ public class InvoicePaymentService {
     private final FileUploader fileUploader;
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "invoice", key = "#invoiceId"),
+        @CacheEvict(value = "invoice-balance", allEntries = true),
+    })
     public void markAsPaid(Long invoiceId, List<MultipartFile> evidenceFiles, String uploadedBy) {
         Invoice invoice = invoiceRepository.findById(invoiceId)
             .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
@@ -51,6 +57,10 @@ public class InvoicePaymentService {
     }
 
     @Transactional
+    @Caching(evict = {
+        @CacheEvict(value = "invoice", allEntries = true),
+        @CacheEvict(value = "invoice-balance", allEntries = true),
+    })
     public int markManyAsPaid(List<Long> invoiceIds, List<MultipartFile> evidenceFiles, String uploadedBy) {
         if (evidenceFiles == null || evidenceFiles.isEmpty()) {
             throw new BusinessException(
@@ -78,6 +88,7 @@ public class InvoicePaymentService {
     }
 
     @Transactional
+    @CacheEvict(value = "invoice", key = "#id")
     public void deleteInvoice(Long id) {
         Invoice invoice = invoiceRepository.findById(id)
             .orElseThrow(() -> new InvoiceNotFoundException(id));
@@ -86,10 +97,11 @@ public class InvoicePaymentService {
     }
 
     @Transactional
+    @CacheEvict(value = "invoice", key = "#invoiceId")
     public void assignClient(Long invoiceId, Long userId) {
         Invoice invoice = invoiceRepository.findById(invoiceId)
             .orElseThrow(() -> new InvoiceNotFoundException(invoiceId));
-        Client client = clientRepository.findById(userId)
+        Client client = clientRepository.findClientByUserId(userId)
             .orElseThrow(() -> new BusinessException(
                 "Cliente no encontrado con userId: " + userId, "CLIENT_NOT_FOUND"));
         invoice.setClient(client);

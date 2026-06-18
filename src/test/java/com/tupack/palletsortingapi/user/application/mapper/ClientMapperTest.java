@@ -89,7 +89,7 @@ class ClientMapperTest {
 
         // Then: All fields should be mapped correctly
         assertThat(dto).isNotNull();
-        assertThat(dto.getId()).isEqualTo(client.getId().toString());
+        assertThat(dto.getId()).isEqualTo(client.getId());
         assertThat(dto.getBusinessName()).isEqualTo(client.getBusinessName());
         assertThat(dto.getRuc()).isEqualTo(client.getRuc());
         assertThat(dto.getPhone()).isEqualTo(client.getPhone());
