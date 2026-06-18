@@ -28,6 +28,11 @@ application:
     base-path: ./test-uploads
     allowed-extensions: pdf,jpg,jpeg,png,doc,docx,txt
     max-file-size: 10485760
+  onesignal:
+    app-id: test-onesignal-app-id
+    rest-api-key: test-onesignal-rest-api-key
+  company:
+    ruc: "20613601296"
 
 logging:
   level:
