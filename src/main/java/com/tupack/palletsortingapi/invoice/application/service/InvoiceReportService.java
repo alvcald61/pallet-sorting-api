@@ -8,18 +8,24 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFCellStyle;
+import org.apache.poi.xssf.usermodel.XSSFColor;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -30,6 +36,8 @@ import org.springframework.transaction.annotation.Transactional;
 public class InvoiceReportService {
 
     private final InvoiceRepository invoiceRepository;
+
+    private static final int COL_COUNT = 7;
 
     @Transactional(readOnly = true)
     public byte[] generateReport(LocalDate dateFrom, LocalDate dateTo, Long companyId) {
@@ -42,16 +50,19 @@ public class InvoiceReportService {
                 return toBytes(workbook);
             }
 
-            CellStyle headerStyle    = buildHeaderStyle(workbook);
-            CellStyle subHeaderStyle = buildSubHeaderStyle(workbook);
-            CellStyle subtotalStyle  = buildSubtotalStyle(workbook);
+            CellStyle subHeaderStyle   = buildSubHeaderStyle(workbook);
+            CellStyle subtotalStyle    = buildSubtotalStyle(workbook);
+            CellStyle subtotalNumStyle = buildSubtotalNumberStyle(workbook);
+            CellStyle numberStyle      = buildNumberStyle(workbook);
 
-            Map<Long, List<Invoice>> byCompany = groupByCompany(invoices);
-            for (List<Invoice> companyInvoices : byCompany.values()) {
-                String sheetName = sanitizeSheetName(companyInvoices.get(0).getCompany().getName());
-                Sheet sheet = workbook.createSheet(sheetName);
-                writeCompanySheet(sheet, companyInvoices, headerStyle, subHeaderStyle, subtotalStyle);
-            }
+            List<Invoice> pending = invoices.stream().filter(i -> i.getStatus() != InvoiceStatus.PAID).toList();
+            List<Invoice> paid    = invoices.stream().filter(i -> i.getStatus() == InvoiceStatus.PAID).toList();
+            if (!pending.isEmpty())
+                writeStatusSheet(workbook.createSheet("Pendientes"), pending, dateFrom, dateTo,
+                    subHeaderStyle, subtotalStyle, subtotalNumStyle, numberStyle);
+            if (!paid.isEmpty())
+                writeStatusSheet(workbook.createSheet("Pagadas"), paid, dateFrom, dateTo,
+                    subHeaderStyle, subtotalStyle, subtotalNumStyle, numberStyle);
 
             return toBytes(workbook);
         } catch (IOException e) {
@@ -59,65 +70,97 @@ public class InvoiceReportService {
         }
     }
 
-    private void writeCompanySheet(Sheet sheet, List<Invoice> invoices,
-            CellStyle headerStyle, CellStyle subHeaderStyle, CellStyle subtotalStyle) {
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    private void writeStatusSheet(Sheet sheet, List<Invoice> invoices,
+            LocalDate dateFrom, LocalDate dateTo,
+            CellStyle subHeaderStyle, CellStyle subtotalStyle, CellStyle subtotalNumStyle, CellStyle numberStyle) {
         int rowNum = 0;
 
-        Row companyRow = sheet.createRow(rowNum++);
-        var companyCell = companyRow.createCell(0);
-        companyCell.setCellValue(invoices.get(0).getCompany().getName());
-        companyCell.setCellStyle(headerStyle);
+        CellStyle boldStyle = buildBoldStyle((XSSFWorkbook) sheet.getWorkbook());
+        String from = (dateFrom != null ? dateFrom
+            : invoices.stream().map(Invoice::getIssueDate).min(Comparator.naturalOrder()).orElse(LocalDate.now())).format(DATE_FMT);
+        String to   = (dateTo != null ? dateTo
+            : invoices.stream().map(Invoice::getIssueDate).max(Comparator.naturalOrder()).orElse(LocalDate.now())).format(DATE_FMT);
+        Row titleRow = sheet.createRow(rowNum++);
+        var titleCell = titleRow.createCell(0);
+        titleCell.setCellValue("REPORTE DE PAGOS :    Del :    " + from + "    Al :    " + to);
+        titleCell.setCellStyle(boldStyle);
 
-        Row subHeader = sheet.createRow(rowNum++);
-        String[] cols = {"N° Factura", "Fecha emisión", "Vencimiento", "Moneda", "Total", "Estado"};
-        for (int i = 0; i < cols.length; i++) {
-            var cell = subHeader.createCell(i);
-            cell.setCellValue(cols[i]);
-            cell.setCellStyle(subHeaderStyle);
+        CellStyle companyNameStyle = buildCompanyNameStyle((XSSFWorkbook) sheet.getWorkbook());
+        String[] cols = {"N° Factura", "Fecha emisión", "Vencimiento", "Moneda", "Total", "Días vencidos", "Estado"};
+
+        Map<Long, List<Invoice>> byCompany = groupByCompany(invoices);
+        for (List<Invoice> companyInvoices : byCompany.values()) {
+            sheet.createRow(rowNum++); // blank before each company
+
+            Row companyRow = sheet.createRow(rowNum++);
+            var companyCell = companyRow.createCell(0);
+            companyCell.setCellValue(companyInvoices.get(0).getCompany().getName());
+            companyCell.setCellStyle(companyNameStyle);
+
+            Row subHeader = sheet.createRow(rowNum++);
+            for (int i = 0; i < cols.length; i++) {
+                var cell = subHeader.createCell(i);
+                cell.setCellValue(cols[i]);
+                cell.setCellStyle(subHeaderStyle);
+            }
+
+            Map<String, List<Invoice>> byCustomer = groupByCustomer(companyInvoices);
+            for (Map.Entry<String, List<Invoice>> entry : byCustomer.entrySet()) {
+                List<Invoice> group = entry.getValue();
+                Invoice sample = group.get(0);
+
+                Row customerRow = sheet.createRow(rowNum++);
+                var customerCell = customerRow.createCell(0);
+                customerCell.setCellValue(sample.getClientName() + " — RUC: " + sample.getClientRuc());
+                customerCell.setCellStyle(boldStyle);
+
+                for (Invoice inv : group) rowNum = writeInvoiceRow(sheet, rowNum, inv, numberStyle);
+                rowNum = writeSubtotalRow(sheet, rowNum, "Subtotal:", group, subtotalStyle, subtotalNumStyle);
+            }
+
+            rowNum = writeSubtotalRow(sheet, rowNum,
+                "TOTAL " + companyInvoices.get(0).getCompany().getName() + ":",
+                companyInvoices, subtotalStyle, subtotalNumStyle);
+
+            sheet.createRow(rowNum++); // blank between companies
         }
 
-        Map<String, List<Invoice>> byCustomer = groupByCustomer(invoices);
-        for (Map.Entry<String, List<Invoice>> entry : byCustomer.entrySet()) {
-            List<Invoice> group = entry.getValue();
-            Invoice sample = group.get(0);
-
-            Row customerRow = sheet.createRow(rowNum++);
-            customerRow.createCell(0)
-                .setCellValue(sample.getClientName() + " — RUC: " + sample.getClientRuc());
-
-            for (Invoice inv : group) rowNum = writeInvoiceRow(sheet, rowNum, inv);
-            rowNum = writeSubtotalRow(sheet, rowNum, "Subtotal:", group, subtotalStyle);
-        }
-
-        rowNum = writeSubtotalRow(sheet, rowNum,
-            "TOTAL " + invoices.get(0).getCompany().getName() + ":",
-            invoices, subtotalStyle);
-
-        for (int i = 0; i < 6; i++) sheet.autoSizeColumn(i);
+        for (int i = 0; i < COL_COUNT; i++) sheet.autoSizeColumn(i);
     }
 
-    private int writeInvoiceRow(Sheet sheet, int rowNum, Invoice inv) {
+    private int writeInvoiceRow(Sheet sheet, int rowNum, Invoice inv, CellStyle numberStyle) {
         Row row = sheet.createRow(rowNum);
         row.createCell(0).setCellValue(inv.getInvoiceNumber());
         row.createCell(1).setCellValue(inv.getIssueDate().toString());
         row.createCell(2).setCellValue(inv.getDueDate() != null ? inv.getDueDate().toString() : "");
         row.createCell(3).setCellValue(inv.getCurrency());
-        row.createCell(4).setCellValue(inv.getTotal().doubleValue());
-        row.createCell(5).setCellValue(inv.getStatus() == InvoiceStatus.PAID ? "Pagado" : "Pendiente");
+        var totalCell = row.createCell(4);
+        totalCell.setCellValue(inv.getTotal().doubleValue());
+        totalCell.setCellStyle(numberStyle);
+        if (inv.getDueDate() != null && LocalDate.now().isAfter(inv.getDueDate())) {
+            row.createCell(5).setCellValue(ChronoUnit.DAYS.between(inv.getDueDate(), LocalDate.now()));
+        }
+        row.createCell(6).setCellValue(inv.getStatus() == InvoiceStatus.PAID ? "Pagado" : "Pendiente");
         return rowNum + 1;
     }
 
     private int writeSubtotalRow(Sheet sheet, int rowNum, String label,
-            List<Invoice> invoices, CellStyle style) {
+            List<Invoice> invoices, CellStyle subtotalStyle, CellStyle subtotalNumStyle) {
         BigDecimal total = invoices.stream()
             .map(Invoice::getTotal).reduce(BigDecimal.ZERO, BigDecimal::add);
         Row row = sheet.createRow(rowNum);
-        var labelCell = row.createCell(0);
-        labelCell.setCellValue(label);
-        labelCell.setCellStyle(style);
-        var totalCell = row.createCell(4);
-        totalCell.setCellValue(total.doubleValue());
-        totalCell.setCellStyle(style);
+        for (int i = 0; i < COL_COUNT; i++) {
+            var cell = row.createCell(i);
+            if (i == 0) cell.setCellValue(label);
+            if (i == 4) {
+                cell.setCellValue(total.doubleValue());
+                cell.setCellStyle(subtotalNumStyle);
+            } else {
+                cell.setCellStyle(subtotalStyle);
+            }
+        }
         return rowNum + 1;
     }
 
@@ -186,13 +229,53 @@ public class InvoiceReportService {
         return style;
     }
 
+    private XSSFColor subtotalGray() {
+        return new XSSFColor(new byte[]{(byte) 231, (byte) 230, (byte) 230}, null);
+    }
+
     private CellStyle buildSubtotalStyle(XSSFWorkbook workbook) {
+        XSSFCellStyle style = (XSSFCellStyle) workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        style.setFont(font);
+        style.setFillForegroundColor(subtotalGray());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        return style;
+    }
+
+    private CellStyle buildSubtotalNumberStyle(XSSFWorkbook workbook) {
+        XSSFCellStyle style = (XSSFCellStyle) workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        style.setFont(font);
+        style.setFillForegroundColor(subtotalGray());
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        DataFormat fmt = workbook.createDataFormat();
+        style.setDataFormat(fmt.getFormat("#,##0.00"));
+        return style;
+    }
+
+    private CellStyle buildCompanyNameStyle(XSSFWorkbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        font.setFontHeightInPoints((short) 14);
+        style.setFont(font);
+        return style;
+    }
+
+    private CellStyle buildBoldStyle(XSSFWorkbook workbook) {
         CellStyle style = workbook.createCellStyle();
         Font font = workbook.createFont();
         font.setBold(true);
         style.setFont(font);
-        style.setFillForegroundColor(IndexedColors.LIGHT_YELLOW.getIndex());
-        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        return style;
+    }
+
+    private CellStyle buildNumberStyle(XSSFWorkbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        DataFormat fmt = workbook.createDataFormat();
+        style.setDataFormat(fmt.getFormat("#,##0.00"));
         return style;
     }
 }
